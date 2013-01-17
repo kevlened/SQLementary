@@ -1,6 +1,6 @@
 
 
-def run(database_type, database_url, schema = None, username = None, password = None, returned_columns, constraints = None, row_limit = None):
+def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None):
     '''
     database_type (string) = sqlite, oracle, db2 etc. from the list of acceptable databases in SQLalchemy
     database_url (string) = location of the database
