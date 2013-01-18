@@ -2,6 +2,8 @@ from elm_objects import elm_column, elm_constraint, elm_table
 import sqlsoup
 from sqlalchemy import MetaData
 import logging
+from itertools import permutations
+import sys
 
 logging.basicConfig(level=logging.INFO)
 
@@ -55,7 +57,7 @@ def run(database_type, database_url, returned_columns, schema = None, username =
             
             tab_col = c[0].split('.')
             if len(tab_col) != 2:
-                raise Exception (str(c[0]) + ' is ambiguous or not in the right format')
+                raise Exception ('The column ' + str(c[0]) + ' is ambiguous or not in the right format')
                                   
             tab = tab_col[0]
             col = tab_col[1]
@@ -65,26 +67,136 @@ def run(database_type, database_url, returned_columns, schema = None, username =
             
             elm_constraints.append(elm_constraint(tab,col,op,v1,v2))
     
-    logging.info('Building a list of all necessary columns to find necessary tables')
-    ret_cols_temp = []        
+    logging.info('Building a list of necessary tables')
+    ret_cols_temp = []
     for tab_col in returned_columns:
         tc = tab_col.split('.')
         if len(tc) != 2:
-            raise Exception (tab_col + ' is ambiguous or not in the right format')
+            raise Exception ('The column ' + tab_col + ' is ambiguous or not in the right format')
         ret_cols_temp.append([tc[0], tc[1]])
         
-    tabs_temp = set([table_column[0] for table_column in ret_cols_temp])
-    con_tabs_temp = set([con.table_name for con in elm_constraints])
-    
+    tabs_temp = set([table_column[0] for table_column in ret_cols_temp])    
+    con_tabs_temp = set([con.table_name for con in elm_constraints])    
     tabs_temp = tabs_temp.union(con_tabs_temp)
     
-    '''TODO: We have the names of the tables we need in tabs_temp. These need to have the optimal joins'''
+    col_tab_all = ret_cols_temp[:]
+    if len(elm_constraints) > 0:
+        col_tab_all.append([[con.table_name, con.column_name] for con in elm_constraints])
     
+    '''Validate the tables actually exist'''
+    all_tables = set([t.name for t in sqa_tables])
+    for tc in col_tab_all:
+        ta  = str(tc[0])
+        co = str(tc[1])
+        if ta not in all_tables:
+            raise Exception('Table ' + ta + ' doesn\'t exist in the current database')
+        else:
+            found = False
+            for t in [t for t in sqa_tables if t.name == ta]:
+                for tcn in [c.name for c in t._columns._all_cols]:
+                    if tcn == co:
+                        found = True
+            if not found:
+                raise Exception('Column ' + '%s.%s' % (ta,co) + ' doesn\'t exist in the current database') 
+    
+    joins = join_sequence(list(sqa_tables), list(tabs_temp))
     
     pass
 
+def join_sequence(sqa_tables, needed_table_names):
+    
+    logging.info('Determine the best JOIN sequence for ' + str(needed_table_names))
+    adjacency_dict = build_adjacency_dict(sqa_tables)
+    
+    best_path = best_join(needed_table_names, adjacency_dict)
+    
+    for table_list in permutations(needed_table_names):
+        path = best_join(table_list, adjacency_dict)        
+        if len(path) < len(best_path):
+            best_path = path
+            
+    logging.info('Best JOIN sequence for ' + str(needed_table_names) + ' is ' + str(best_path))
+    return best_path
+    
+def build_adjacency_dict(sqa_tables):
+    # This builds a dictionary containing all tables and their neighbors for Dijkstra's algorithm
+    adjacency_dict = {}
+    for table in sqa_tables:
+        adjacency_dict[table.name] = set()
+    for table in sqa_tables:            
+        for fk in table.foreign_keys:
+            # Relationships go both ways
+            adjacency_dict[table.name].add(fk.column.table.name)
+            adjacency_dict[fk.column.table.name].add(table.name)
+    return adjacency_dict
+
+def best_join(join_seq, adjacency_dict):
+    path = []
+    for i in range(0,len(join_seq)-1):
+        tableA = join_seq[i]
+        tableB = join_seq[i+1]
+        path += shortest_path(tableA,tableB, adjacency_dict)
+    path.append(join_seq[len(join_seq)-1])
+    return path
+        
+def shortest_path(tableA, tableB, adjacency_dict):
+    visited = set()
+    '''A set of all the tables you've visited so far'''
+    distance = {tableA:0}
+    '''The distances (in joins) for each node'''
+    joins_required = {tableA:[]}
+    
+    to_visit = set()
+    '''The current set of tables to visit'''
+    next_to_visit = set()
+    '''The set of tables to visit after the current set is complete'''
+    
+    # first iteration
+    for table_name in adjacency_dict[tableA]:
+        '''find the neighbors for each and make that the next round'''
+        # the next tables take 1 join to get to
+        distance[table_name] = 1
+        # we start all joins with tableA
+        joins_required[table_name] = [tableA]
+        next_to_visit.add(table_name)
+    visited.add(tableA)
+        
+    # subsequent iterations
+    # having the table in the visited set guarantees we've passed it
+    while tableB not in visited:
+        # flush next_to_visit into to_visit
+        to_visit = set(next_to_visit)
+        next_to_visit = set()
+        
+        for table_name in to_visit:
+            # find neighbors that we haven't visited
+            for tname in adjacency_dict[table_name] - visited:
+                # if the table is recursive, this is unnecessary
+                if tname == table_name:
+                    continue
+                    
+                if tname in distance.keys():
+                    ''' If we have a distance recorded for a table'''
+                    if distance[tname] > distance[table_name] + 1:
+                        ''' and the recorded distance is greater than its possible distance'''
+                        distance[tname] = distance[table_name] + 1
+                        ''' replace the recorded distance with its new distance'''
+                        joins_required[tname] = joins_required[table_name][:]
+                        joins_required[tname].append(table_name)
+#                    if len(joins_required[tname]) > len(joins_required[table_name]) + 1:
+#                        joins_required[tname].append(table_name)
+                else:
+                    distance[tname] = distance[table_name] + 1
+                    joins_required[tname] = joins_required[table_name][:]
+                    joins_required[tname].append(table_name)
+                    
+                next_to_visit.add(tname)
+            visited.add(table_name)
+    
+    return joins_required[tableB]
+
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Track.Name', 'Artist.Name'])
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Artist.Name', 'Playlist.Name', 'Employee.LastName'])
 
 if __name__ == '__main__':
     main()
