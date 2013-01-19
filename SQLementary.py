@@ -1,13 +1,14 @@
 from elm_objects import elm_column, elm_constraint, elm_table
 import sqlsoup
 from sqlalchemy import MetaData
+from sqlalchemy.sql import column, table, select, join
 import logging
 from itertools import permutations
-import sys
+import sqlparse
 
 logging.basicConfig(level=logging.INFO)
 
-def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None):
+def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, data = False):
     '''
     Returns SQL without the need to understand the SQL logic
     @type database_type: string
@@ -68,18 +69,18 @@ def run(database_type, database_url, returned_columns, schema = None, username =
             elm_constraints.append(elm_constraint(tab,col,op,v1,v2))
     
     logging.info('Building a list of necessary tables')
-    ret_cols_temp = []
+    ret_cols = []
     for tab_col in returned_columns:
         tc = tab_col.split('.')
         if len(tc) != 2:
             raise Exception ('The column ' + tab_col + ' is ambiguous or not in the right format')
-        ret_cols_temp.append([tc[0], tc[1]])
+        ret_cols.append([tc[0], tc[1]])
         
-    tabs_temp = set([table_column[0] for table_column in ret_cols_temp])    
+    tabs_temp = set([table_column[0] for table_column in ret_cols])    
     con_tabs_temp = set([con.table_name for con in elm_constraints])    
     tabs_temp = tabs_temp.union(con_tabs_temp)
     
-    col_tab_all = ret_cols_temp[:]
+    col_tab_all = ret_cols[:]
     if len(elm_constraints) > 0:
         col_tab_all.append([[con.table_name, con.column_name] for con in elm_constraints])
     
@@ -101,7 +102,43 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     
     joins = join_sequence(list(sqa_tables), list(tabs_temp))
     
-    pass
+    table_dict = {tab.name:tab.data for tab in elm_tables}
+    
+    '''Build the columns to select'''
+    sqa_select_cols = []
+    for tc in ret_cols:
+        t = tc[0]
+        c = tc[1]
+        for ec in table_dict[t]._columns._all_cols:
+            if ec.name == c:
+                sqa_select_cols.append(ec)
+                break
+    
+    '''Build the tables to join'''  
+    sqa_joins = None
+    if len(joins) == 1:
+        sqa_joins = table_dict[joins[0]]
+    else:
+        sqa_joins = join(table_dict[joins[0]], table_dict[joins[1]])
+        for i in range(2,len(joins)):
+            sqa_joins = join(sqa_joins, table_dict[joins[i]])
+            
+    '''Build the full select statement'''
+    sqa_select = select(sqa_select_cols, from_obj=[sqa_joins]).distinct()
+    if row_limit:
+        sqa_select = sqa_select.limit(row_limit)
+    
+    '''Execute the full statement'''
+    if data:
+        conn = db.engine.connect()
+        res = conn.execute(sqa_select).fetchall()
+        for row in res:
+            logging.info('Data row ' + str(row))
+    else:    
+        compile_engine = sqa_select.compile()
+        compile_engine.statement.use_labels = True
+        sql = str(compile_engine.statement)
+        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
 
 def join_sequence(sqa_tables, needed_table_names):
     
@@ -196,7 +233,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Artist.Name', 'Playlist.Name', 'Employee.LastName'])
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Album.Title', 'Track.Name', 'MediaType.Name', 'Genre.Name'], row_limit = None, data = False)
 
 if __name__ == '__main__':
     main()
