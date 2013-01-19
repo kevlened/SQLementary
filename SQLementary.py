@@ -1,7 +1,7 @@
 from elm_objects import elm_column, elm_constraint, elm_table
 import sqlsoup
 from sqlalchemy import MetaData
-from sqlalchemy.sql import column, table, select, join
+from sqlalchemy.sql import column, table, select, join, compiler
 import logging
 from itertools import permutations
 import sqlparse
@@ -146,13 +146,40 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     else:    
         compile_engine = sqa_select.compile()
         compile_engine.statement.use_labels = True
-        sql = str(compile_engine.statement)
-        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
-        
-    '''TODO: Actually compile SQL from Query instead of Select Clause
-    http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
-    As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want'''
+        sql = compile_query(sqa_select)
+        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))        
+    
     pass
+
+def compile_query(query):
+    '''
+    http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
+    As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
+    '''
+    
+    dialect = query.bind.dialect
+    statement = query.compile().statement
+    comp = compiler.SQLCompiler(dialect, statement)
+    comp.compile()
+    enc = dialect.encoding    
+    
+    '''Do my own hack for now - only works for sqlite'''
+    params = []
+    for k,v in comp.params.iteritems():
+        params.append(v)
+    #params.append(str(0)) #Add 0 for offset
+        
+    state_str = comp.string.encode(enc)
+    state_str = state_str.replace('?', '%s')
+    return state_str % tuple(params)
+    
+#    params = {}
+#    for k,v in comp.params.iteritems():
+#        if isinstance(v, unicode):
+#            v = v.encode(enc)
+#        #params[k] = sqlescape(v)
+#        params[k] = v
+#    return (comp.string.encode(enc) % params).decode(enc)
 
 def join_sequence(sqa_tables, needed_table_names):
     
@@ -245,7 +272,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Album.Title', 'Track.Name', 'MediaType.Name', 'Genre.Name'], row_limit = 5, data = True)
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Album.Title', 'Track.Name', 'MediaType.Name', 'Genre.Name'], row_limit = 5, data = False)
 
 if __name__ == '__main__':
     main()
