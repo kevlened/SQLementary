@@ -100,8 +100,16 @@ def run(database_type, database_url, returned_columns, schema = None, username =
             if not found:
                 raise Exception('Column ' + '%s.%s' % (ta,co) + ' doesn\'t exist in the current database') 
     
-    joins = join_sequence(list(sqa_tables), list(tabs_temp))
+    '''Find the optimal JOIN path'''
+    joins = join_sequence(list(sqa_tables), list(tabs_temp))    
     
+    '''Remove JOIN redundancy http://stackoverflow.com/a/480227'''   
+    seen = set()
+    seen_add = seen.add
+    new_joins =  [ x for x in joins if x not in seen and not seen_add(x)]
+    joins = new_joins
+    
+    '''Make it easy to find table data via a dictionary'''
     table_dict = {tab.name:tab.data for tab in elm_tables}
     
     '''Build the columns to select'''
@@ -112,9 +120,9 @@ def run(database_type, database_url, returned_columns, schema = None, username =
         for ec in table_dict[t]._columns._all_cols:
             if ec.name == c:
                 sqa_select_cols.append(ec)
-                break
+                break    
     
-    '''Build the tables to join'''  
+    '''Build the tables to join'''
     sqa_joins = None
     if len(joins) == 1:
         sqa_joins = table_dict[joins[0]]
@@ -130,6 +138,7 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     
     '''Execute the full statement'''
     if data:
+        #db.engine._echo = True
         conn = db.engine.connect()
         res = conn.execute(sqa_select).fetchall()
         for row in res:
@@ -139,6 +148,11 @@ def run(database_type, database_url, returned_columns, schema = None, username =
         compile_engine.statement.use_labels = True
         sql = str(compile_engine.statement)
         logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
+        
+    '''TODO: Actually compile SQL from Query instead of Select Clause
+    http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
+    As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want'''
+    pass
 
 def join_sequence(sqa_tables, needed_table_names):
     
@@ -220,8 +234,6 @@ def shortest_path(tableA, tableB, adjacency_dict):
                         ''' replace the recorded distance with its new distance'''
                         joins_required[tname] = joins_required[table_name][:]
                         joins_required[tname].append(table_name)
-#                    if len(joins_required[tname]) > len(joins_required[table_name]) + 1:
-#                        joins_required[tname].append(table_name)
                 else:
                     distance[tname] = distance[table_name] + 1
                     joins_required[tname] = joins_required[table_name][:]
@@ -233,7 +245,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Album.Title', 'Track.Name', 'MediaType.Name', 'Genre.Name'], row_limit = None, data = False)
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Album.Title', 'Track.Name', 'MediaType.Name', 'Genre.Name'], row_limit = 5, data = True)
 
 if __name__ == '__main__':
     main()
