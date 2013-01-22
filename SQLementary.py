@@ -49,22 +49,23 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     if constraints:
         for c in constraints:
             '''Sanitize val2'''
-            if len(c) == 4:
+            if len(c) == 3:
                 c.append(None)
-            if c[4] == '':
-                c[4] = None
+            if c[3] == '':
+                c[3] = None
             else:
                 raise Exception (c + ' is not a valid constraint')
             
             tab_col = c[0].split('.')
+            'TODO: Add additional table/column validation'
             if len(tab_col) != 2:
                 raise Exception ('The column ' + str(c[0]) + ' is ambiguous or not in the right format')
                                   
             tab = tab_col[0]
             col = tab_col[1]
-            op = c[2]
-            v1 = c[3]
-            v2 = c[4]
+            op = c[1]
+            v1 = c[2]
+            v2 = c[3]
             
             elm_constraints.append(elm_constraint(tab,col,op,v1,v2))
     
@@ -82,7 +83,8 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     
     col_tab_all = ret_cols[:]
     if len(elm_constraints) > 0:
-        col_tab_all.append([[con.table_name, con.column_name] for con in elm_constraints])
+        for con in elm_constraints:
+            col_tab_all.append([con.table_name, con.column_name])
     
     '''Validate the tables actually exist'''
     all_tables = set([t.name for t in sqa_tables])
@@ -132,7 +134,13 @@ def run(database_type, database_url, returned_columns, schema = None, username =
             sqa_joins = join(sqa_joins, table_dict[joins[i]])
             
     '''Build the full select statement'''
-    sqa_select = select(sqa_select_cols, from_obj=[sqa_joins]).distinct()
+    sqa_select = select(sqa_select_cols, from_obj=[sqa_joins])
+    
+    '''Add the constraints'''
+#    for ec in elm_constraints:
+#        sqa_select = sqa_select.filter(str(ec))
+        
+    sqa_select = sqa_select.distinct()
     if row_limit:
         sqa_select = sqa_select.limit(row_limit)
     
@@ -272,7 +280,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Album.Title', 'Track.Name', 'MediaType.Name', 'Genre.Name'], row_limit = 5, data = False)
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName'], constraints = [['InvoiceLine.UnitPrice','=','1','']], row_limit = 5, data = False)
 
 if __name__ == '__main__':
     main()

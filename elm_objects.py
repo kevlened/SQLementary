@@ -19,6 +19,12 @@ class elm_constraint(object):
         '''val2 (string) = used for BETWEEN operator only'''
         pass
     
+    def __repr__(self):
+        if self.val2:
+            return '%s.%s %s %s %s' % self.table_name, self.column_name, self.operator, self.val1, self.val2
+        else:
+            return '%s.%s %s %s' % self.table_name, self.column_name, self.operator, self.val1
+    
 class elm_column(object):
     '''Represents a column within SQLementary'''
     def __init__(self, column_data):        
