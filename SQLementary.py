@@ -23,26 +23,6 @@ import sqlparse
 logging.basicConfig(level=logging.INFO)
 
 def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, data = False):
-    '''
-    Returns SQL without the need to understand the SQL logic
-    @type database_type: string
-    @param database_type: sqlite, oracle, db2 etc. from the list of acceptable databases in SQLalchemy
-    @type database_url: string
-    @param database_url: location of the database
-    @type schema: string
-    @param schema: optional database schema
-    @type username: string
-    @param username: optional database credentials
-    @type password: string
-    @param password: optional database credentials
-    @type returned_columns: list[string]
-    @param returned_columns: columns that are expected in the resulting rows
-    @type constraint: list[list[string,string,string,string]]
-    @param constraint: optional columns to constrain. list[table.column,operator,val1,optional val2]
-    @type row_limit: integer
-    @param row_limit: optional number of rows returned
-    @return: SQL as a string
-    '''
     
     db_full_loc = '%s:///%s' % (database_type, database_url)
     db = sqlsoup.SQLSoup(db_full_loc)
@@ -127,9 +107,6 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     table_dict = {tab.name:tab.data for tab in elm_tables}
     
     '''Instantiate the query'''
-#    Session = sessionmaker(bind=db.engine, autocommit=True)
-#    session = Session()
-#    with session.begin():
     query = db.session.query()
             
     '''Build the columns to select'''
@@ -143,116 +120,55 @@ def run(database_type, database_url, returned_columns, schema = None, username =
                 query = query.add_columns(ec)
                 break    
             
-    '''Build the tables to join'''    
-    sqa_joins = None
-    
+    '''Build the joins'''
     query = query.select_from(table_dict[joins[0]])
-    if len(joins) == 1:
-        sqa_joins = table_dict[joins[0]]
-    else:
-        sqa_joins = join(table_dict[joins[0]], table_dict[joins[1]])
-        query = query.join(table_dict[joins[1]])
-        for i in range(2,len(joins)):
-            sqa_joins = join(sqa_joins, table_dict[joins[i]])
-            query = query.join(table_dict[joins[i]])
-            
-    '''Build the full select statement'''
-    sqa_select = select(sqa_select_cols, from_obj=[sqa_joins])
-#    query = query.select(sqa_select_cols, from_obj=[sqa_joins])
+    for i in range(1,len(joins)):
+        query = query.join(table_dict[joins[i]])
     
     '''Add the constraints'''
     for ec in elm_constraints:
         query = query.filter(str(ec))
         
-    sqa_select = sqa_select.distinct()
+    '''Make rows distinct'''
     query = query.distinct()
+    
+    '''Limit the number of returned rows'''
     if row_limit:
-        sqa_select = sqa_select.limit(row_limit)
         query = query.limit(row_limit)
     
     '''Execute the full statement'''
     if data:
         #db.engine._echo = True
-        conn = db.engine.connect()
-        #res = conn.execute(sqa_select).fetchall()
         res = query.all()
         for row in res:
             logging.info('Data row ' + str(row))
-    else:    
-        compile_engine = sqa_select.compile()
-        compile_engine.statement.use_labels = True
-        sql = compile_query_old(sqa_select)
-        #logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
-        
+            print str(row)
+    else:
+        '''TODO: fix the dialect hack'''
         sql = compile_query(query,select(sqa_select_cols).bind.dialect)
-        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))  
-#        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
-    
-#        compile_engine = query.compile()
-#        compile_engine.statement.use_labels = True
-                      
-    
-    pass
-
-def compile_query_old(query):
-    '''
-    http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
-    As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
-    '''
-    
-    dialect = query.bind.dialect
-    statement = query.compile().statement
-    comp = compiler.SQLCompiler(dialect, statement)
-    comp.compile()
-    enc = dialect.encoding    
-    
-    '''Do my own hack for now - only works for sqlite'''
-    params = []
-    for k,v in comp.params.iteritems():
-        params.append(v)
-    #params.append(str(0)) #Add 0 for offset
-        
-    state_str = comp.string.encode(enc)
-    state_str = state_str.replace('?', '%s')
-    return state_str % tuple(params)
-    
-#    params = {}
-#    for k,v in comp.params.iteritems():
-#        if isinstance(v, unicode):
-#            v = v.encode(enc)
-#        #params[k] = sqlescape(v)
-#        params[k] = v
-#    return (comp.string.encode(enc) % params).decode(enc)
+        sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
+        logging.info('Returned query ' + sql)
+        print sql
 
 def compile_query(query, dialect):
     '''
     http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
-    '''
-    
+    '''    
 #    dialect = query.session.bind.dialect
     statement = query.statement
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
     enc = dialect.encoding    
     
-    '''Do my own hack for now - only works for sqlite'''
+    '''TODO: fix my own hack - only works for sqlite'''
     params = []
     for k,v in comp.params.iteritems():
         params.append(v)
-    #params.append(str(0)) #Add 0 for offset
         
     state_str = comp.string.encode(enc)
     state_str = state_str.replace('?', '%s')
     return state_str % tuple(params)
-    
-#    params = {}
-#    for k,v in comp.params.iteritems():
-#        if isinstance(v, unicode):
-#            v = v.encode(enc)
-#        #params[k] = sqlescape(v)
-#        params[k] = v
-#    return (comp.string.encode(enc) % params).decode(enc)
 
 def join_sequence(sqa_tables, needed_table_names):
     
