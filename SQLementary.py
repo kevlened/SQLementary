@@ -67,8 +67,6 @@ def run(database_type, database_url, returned_columns, schema = None, username =
                 c.append(None)
             if c[3] == '':
                 c[3] = None
-            else:
-                raise Exception (c + ' is not a valid constraint')
             
             tab_col = c[0].split('.')
             'TODO: Add additional table/column validation'
@@ -347,7 +345,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName','InvoiceLine.UnitPrice'], constraints = [['InvoiceLine.UnitPrice','>=','.99',''],['InvoiceLine.UnitPrice','<','2','']], row_limit = 5, data = False)
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName','InvoiceLine.UnitPrice'], constraints = [['InvoiceLine.UnitPrice','>=','.99',''],['InvoiceLine.UnitPrice','<','2',''],['InvoiceLine.UnitPrice','BETWEEN','.99','2']], row_limit = 5, data = False)
 
 if __name__ == '__main__':
     main()
