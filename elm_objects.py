@@ -1,3 +1,14 @@
+#-------------------------------------------------------------------------------
+# Name:        SQLementary
+# Purpose:     Return data or automatically generate SQL from an arbitrary
+#              database using database access info, requested columns and  
+#              constraints.
+#
+# Author:      Kevin (Len) Boyette
+# Created:     01/22/2013
+# Copyright:   (c) Len 2013
+# License:     LGPL (http://www.gnu.org/licenses/lgpl-3.0.txt)
+#-------------------------------------------------------------------------------
 
 class elm_constraint(object):
     '''Represents a constraint on a particular column'''
@@ -21,9 +32,11 @@ class elm_constraint(object):
     
     def __repr__(self):
         if self.val2:
-            return '%s.%s %s %s %s' % self.table_name, self.column_name, self.operator, self.val1, self.val2
+            #return '%s.%s %s %s %s' % self.table_name, self.column_name, self.operator, self.val1, self.val2
+            return self.table_name + '.' + self.column_name + self.operator + self.val1 + ' and ' + self.val2
         else:
-            return '%s.%s %s %s' % self.table_name, self.column_name, self.operator, self.val1
+            #return '%s.%s %s %s' % self.table_name, self.column_name, self.operator, self.val1
+            return self.table_name + '.' + self.column_name + self.operator + self.val1
     
 class elm_column(object):
     '''Represents a column within SQLementary'''

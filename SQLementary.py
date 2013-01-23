@@ -1,7 +1,21 @@
+#-------------------------------------------------------------------------------
+# Name:        SQLementary
+# Purpose:     Return data or automatically generate SQL from an arbitrary
+#              database using database access info, requested columns and  
+#              constraints.
+#
+# Author:      Kevin (Len) Boyette
+# Created:     01/22/2013
+# Copyright:   (c) Len 2013
+# License:     LGPL (http://www.gnu.org/licenses/lgpl-3.0.txt)
+#-------------------------------------------------------------------------------
+
+
 from elm_objects import elm_column, elm_constraint, elm_table
 import sqlsoup
 from sqlalchemy import MetaData
 from sqlalchemy.sql import column, table, select, join, compiler
+from sqlalchemy.orm import sessionmaker
 import logging
 from itertools import permutations
 import sqlparse
@@ -114,6 +128,12 @@ def run(database_type, database_url, returned_columns, schema = None, username =
     '''Make it easy to find table data via a dictionary'''
     table_dict = {tab.name:tab.data for tab in elm_tables}
     
+    '''Instantiate the query'''
+#    Session = sessionmaker(bind=db.engine, autocommit=True)
+#    session = Session()
+#    with session.begin():
+    query = db.session.query()
+            
     '''Build the columns to select'''
     sqa_select_cols = []
     for tc in ret_cols:
@@ -122,44 +142,61 @@ def run(database_type, database_url, returned_columns, schema = None, username =
         for ec in table_dict[t]._columns._all_cols:
             if ec.name == c:
                 sqa_select_cols.append(ec)
+                query = query.add_columns(ec)
                 break    
-    
-    '''Build the tables to join'''
+            
+    '''Build the tables to join'''    
     sqa_joins = None
+    
+    query = query.select_from(table_dict[joins[0]])
     if len(joins) == 1:
         sqa_joins = table_dict[joins[0]]
     else:
         sqa_joins = join(table_dict[joins[0]], table_dict[joins[1]])
+        query = query.join(table_dict[joins[1]])
         for i in range(2,len(joins)):
             sqa_joins = join(sqa_joins, table_dict[joins[i]])
+            query = query.join(table_dict[joins[i]])
             
     '''Build the full select statement'''
     sqa_select = select(sqa_select_cols, from_obj=[sqa_joins])
+#    query = query.select(sqa_select_cols, from_obj=[sqa_joins])
     
     '''Add the constraints'''
-#    for ec in elm_constraints:
-#        sqa_select = sqa_select.filter(str(ec))
+    for ec in elm_constraints:
+        query = query.filter(str(ec))
         
     sqa_select = sqa_select.distinct()
+    query = query.distinct()
     if row_limit:
         sqa_select = sqa_select.limit(row_limit)
+        query = query.limit(row_limit)
     
     '''Execute the full statement'''
     if data:
         #db.engine._echo = True
         conn = db.engine.connect()
-        res = conn.execute(sqa_select).fetchall()
+        #res = conn.execute(sqa_select).fetchall()
+        res = query.all()
         for row in res:
             logging.info('Data row ' + str(row))
     else:    
         compile_engine = sqa_select.compile()
         compile_engine.statement.use_labels = True
-        sql = compile_query(sqa_select)
-        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))        
+        sql = compile_query_old(sqa_select)
+        #logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
+        
+        sql = compile_query(query,select(sqa_select_cols).bind.dialect)
+        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))  
+#        logging.info('Returned query ' + sqlparse.format(sql, reindent=True, keyword_case='upper'))
+    
+#        compile_engine = query.compile()
+#        compile_engine.statement.use_labels = True
+                      
     
     pass
 
-def compile_query(query):
+def compile_query_old(query):
     '''
     http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
@@ -167,6 +204,36 @@ def compile_query(query):
     
     dialect = query.bind.dialect
     statement = query.compile().statement
+    comp = compiler.SQLCompiler(dialect, statement)
+    comp.compile()
+    enc = dialect.encoding    
+    
+    '''Do my own hack for now - only works for sqlite'''
+    params = []
+    for k,v in comp.params.iteritems():
+        params.append(v)
+    #params.append(str(0)) #Add 0 for offset
+        
+    state_str = comp.string.encode(enc)
+    state_str = state_str.replace('?', '%s')
+    return state_str % tuple(params)
+    
+#    params = {}
+#    for k,v in comp.params.iteritems():
+#        if isinstance(v, unicode):
+#            v = v.encode(enc)
+#        #params[k] = sqlescape(v)
+#        params[k] = v
+#    return (comp.string.encode(enc) % params).decode(enc)
+
+def compile_query(query, dialect):
+    '''
+    http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
+    As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
+    '''
+    
+#    dialect = query.session.bind.dialect
+    statement = query.statement
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
     enc = dialect.encoding    
@@ -280,7 +347,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName'], constraints = [['InvoiceLine.UnitPrice','=','1','']], row_limit = 5, data = False)
+    run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName','InvoiceLine.UnitPrice'], constraints = [['InvoiceLine.UnitPrice','>=','.99',''],['InvoiceLine.UnitPrice','<','2','']], row_limit = 5, data = False)
 
 if __name__ == '__main__':
     main()
