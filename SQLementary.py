@@ -263,7 +263,7 @@ def shortest_path(tableA, tableB, adjacency_dict):
     return joins_required[tableB]
 
 parser = OptionParser()
-parser.add_option("-t", "--type", type="string", dest="db_type", help="Define the database type. Current options are (sqlite)")
+parser.add_option("-t", "--type", dest="db_type", choices=['sqlite'], help="Define the database type. Only current option is sqlite")
 parser.add_option("-l", "--location", type="string", dest="db_location", help="Define the database location.")
 parser.add_option("-u", "--user", type="string", dest="username", help="(optional) Specify a database username")
 parser.add_option("-p", "--password", type="string", dest="password", help="(optional) Specify a database password")
