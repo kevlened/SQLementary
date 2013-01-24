@@ -13,16 +13,18 @@
 
 from elm_objects import elm_column, elm_constraint, elm_table
 import sqlsoup
-from sqlalchemy import MetaData
+#from sqlalchemy import MetaData
 from sqlalchemy.sql import column, table, select, join, compiler
-from sqlalchemy.orm import sessionmaker
+#from sqlalchemy.orm import sessionmaker
 import logging
 from itertools import permutations
 import sqlparse
+import sys
+from optparse import OptionParser
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.CRITICAL)
 
-def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, data = False):
+def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, sql = False):
     
     db_full_loc = '%s:///%s' % (database_type, database_url)
     db = sqlsoup.SQLSoup(db_full_loc)
@@ -137,18 +139,18 @@ def run(database_type, database_url, returned_columns, schema = None, username =
         query = query.limit(row_limit)
     
     '''Execute the full statement'''
-    if data:
-        #db.engine._echo = True
-        res = query.all()
-        for row in res:
-            logging.info('Data row ' + str(row))
-            print str(row)
-    else:
+    if sql:
         '''TODO: fix the dialect hack'''
         sql = compile_query(query,select(sqa_select_cols).bind.dialect)
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
         print sql
+    else:        
+        #db.engine._echo = True
+        res = query.all()
+        for row in res:
+            logging.info('Data row ' + str(row))
+            print str(row)
 
 def compile_query(query, dialect):
     '''
@@ -260,8 +262,37 @@ def shortest_path(tableA, tableB, adjacency_dict):
     
     return joins_required[tableB]
 
-def main():
-    run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName','InvoiceLine.UnitPrice'], constraints = [['InvoiceLine.UnitPrice','>=','.99',''],['InvoiceLine.UnitPrice','<','2',''],['InvoiceLine.UnitPrice','BETWEEN','.99','2']], row_limit = 5, data = False)
+parser = OptionParser()
+parser.add_option("-t", "--type", type="string", dest="db_type", help="Define the database type. Current options are (sqlite)")
+parser.add_option("-l", "--location", type="string", dest="db_location", help="Define the database location.")
+parser.add_option("-u", "--user", type="string", dest="username", help="(optional) Specify a database username")
+parser.add_option("-p", "--password", type="string", dest="password", help="(optional) Specify a database password")
+parser.add_option("-s", "--schema", type="string", dest="schema", help="(optional) Specify a database schema")
+parser.add_option("-c", "--column", action="append", type="string", dest="columns", help="Define each column you want separately. Use the format TableName.ColumnName")
+parser.add_option("-f", "--filter", action="append", type="string", dest="constraints", help="(optional) Define each filter you want separately. Use the format \"TableName.ColumnName , Operator, Value1, (optional) Value2\"")
+parser.add_option("-r", "--rows", type="int", dest="row_limit", help="(optional) Define the number of rows you want returned")
+parser.add_option("-q", "--sql", action="store_true", dest="sql", help="(optional) If flag is present SQL is returned instead of data")
 
+def main():
+    (options, args) = parser.parse_args()
+    #run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName','InvoiceLine.UnitPrice'], constraints = [['InvoiceLine.UnitPrice','>=','.99',''],['InvoiceLine.UnitPrice','<','2','']], row_limit = 5, sql = False)
+    
+    if len(args) != 3:
+        parser.error("You must provide at least the database type, database location, and desired columns. Type SQLementary.py -h to see how.")
+    
+    cons = None
+    if options.constraints:
+        cons = [c.split(',') for c in options.constraints]
+        
+    run(options.db_type,\
+        options.db_location,\
+        options.columns,\
+        schema = options.schema,\
+        username = options.username,\
+        password = options.password,\
+        constraints = cons,\
+        row_limit = options.row_limit,\
+        sql = options.sql)
+    
 if __name__ == '__main__':
     main()
