@@ -276,9 +276,9 @@ parser.add_option("-q", "--sql", action="store_true", dest="sql", help="(optiona
 def main():
     (options, args) = parser.parse_args()
     #run('sqlite','C:\Chinook_Sqlite.sqlite',['Genre.Name', 'Customer.FirstName','InvoiceLine.UnitPrice'], constraints = [['InvoiceLine.UnitPrice','>=','.99',''],['InvoiceLine.UnitPrice','<','2','']], row_limit = 5, sql = False)
-    
-    if len(args) != 3:
-        parser.error("You must provide at least the database type, database location, and desired columns. Type SQLementary.py -h to see how.")
+           
+    if not options.db_type or not options.db_location or not options.columns:
+        parser.error("You must provide at least the database type, database location, and desired columns. Type SQLementary.py -h to see how.")  
     
     cons = None
     if options.constraints:
