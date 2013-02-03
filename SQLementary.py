@@ -24,12 +24,26 @@ from optparse import OptionParser
 
 logging.basicConfig(level=logging.CRITICAL)
 
-def run(database_type, database_url, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, sql = False):
-    
-    db_full_loc = '%s:///%s' % (database_type, database_url)
+def build_elm_schema(db_full_loc):
     db = sqlsoup.SQLSoup(db_full_loc)
     
     elm_tables = []
+    
+    logging.info('Pulling table and column Metadata from database')
+    if not len(db._metadata.tables):
+        db._metadata.reflect()
+    sqa_tables = db._metadata.tables.values()
+    
+    logging.info('Loading all tables and columns objects using Metadata')
+    for sqa_table in sqa_tables:
+        elm_tables.append(elm_table(sqa_table))
+    
+    return db, elm_tables
+
+def run(database_cnx_loc, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, commandline = False):
+    
+    db_full_loc = database_cnx_loc
+    db, elm_tables = build_elm_schema(db_full_loc)
     elm_constraints = []
     
     logging.info('Pulling table and column Metadata from database')
@@ -139,18 +153,25 @@ def run(database_type, database_url, returned_columns, schema = None, username =
         query = query.limit(row_limit)
     
     '''Execute the full statement'''
-    if sql:
-        '''TODO: fix the dialect hack'''
+    if commandline:
+        if sql:
+            '''TODO: fix the dialect hack'''
+            sql = compile_query(query,select(sqa_select_cols).bind.dialect)
+            sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
+            logging.info('Returned query ' + sql)
+            print sql
+        else:        
+            #db.engine._echo = True
+            res = query.all()
+            for row in res:
+                logging.info('Data row ' + str(row))
+                print str(row)
+    else:
         sql = compile_query(query,select(sqa_select_cols).bind.dialect)
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
-        print sql
-    else:        
-        #db.engine._echo = True
         res = query.all()
-        for row in res:
-            logging.info('Data row ' + str(row))
-            print str(row)
+        return sql, res
 
 def compile_query(query, dialect):
     '''
@@ -271,7 +292,7 @@ parser.add_option("-s", "--schema", type="string", dest="schema", help="(optiona
 parser.add_option("-c", "--column", action="append", type="string", dest="columns", help="Define each column you want separately. Use the format TableName.ColumnName")
 parser.add_option("-f", "--filter", action="append", type="string", dest="constraints", help="(optional) Define each filter you want separately. Use the format \"TableName.ColumnName , Operator, Value1, (optional) Value2\"")
 parser.add_option("-r", "--rows", type="int", dest="row_limit", help="(optional) Define the number of rows you want returned")
-parser.add_option("-q", "--sql", action="store_true", dest="sql", help="(optional) If flag is present SQL is returned instead of data")
+parser.add_option("-q", "--sql", action="store_true", dest="sql", help="(optional) If flag is present, SQL is returned instead of data")
 
 def main():
     (options, args) = parser.parse_args()
@@ -284,15 +305,15 @@ def main():
     if options.constraints:
         cons = [c.split(',') for c in options.constraints]
         
-    run(options.db_type,\
-        options.db_location,\
+    run('%s:///%s' % (options.db_type, options.db_location),\
         options.columns,\
         schema = options.schema,\
         username = options.username,\
         password = options.password,\
         constraints = cons,\
         row_limit = options.row_limit,\
-        sql = options.sql)
+        sql = options.sql,\
+        commandline = True)
     
 if __name__ == '__main__':
     main()
