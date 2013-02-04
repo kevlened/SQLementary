@@ -9,11 +9,13 @@
     
     <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.0.3/angular.min.js"></script>
 
-    <!-- Le styles -->
+    <!-- Le styles -->    
+	<!-- <link href="../static/css/bootstrap-switch.css" rel="stylesheet"> -->
     <link href="../static/css/bootstrap-select.min.css" rel="stylesheet">
     <link href="../static/css/bootstrap.min.css" rel="stylesheet">
     <link href="../static/css/SQLementary.css" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="../static/css/jquery.dataTables.css">
+	
     <style type="text/css">
       body {
         padding-top: 20px;
@@ -93,7 +95,7 @@
 	  <li><a href="#builder" data-toggle="pill">Builder</a></li>
 	  <li><a href="#erdviewer" data-toggle="pill">ERD Viewer</a></li>
 	</ul> 
-	</div>
+</div>
 	
 	<div class="tab-content">
 	  <div class="tab-pane active" id="builder">
@@ -131,9 +133,11 @@
 		        <ng-switch on="!!fil.table && !!fil.column">
 		        <span ng-switch-when="true">
 				<select class="selectpicker span1" ng-model="fil.operator">
-					<option>&#061;</option>
+					<option>&#061;</option>	
+					<option>&#060;</option>				
+					<option>&#060;&#061;</option>
 					<option>&#062;</option>
-					<option>&#060;</option>
+					<option>&#062;&#061;</option>
 					<option>&#060;&#062;</option>
 				    <option value="between">Btw</option>
 				</select>
@@ -148,11 +152,22 @@
 			</ul>
 			<button class="btn btn-small btn-inverse" type="button" ng-click="addFilter()">Add Filter</button>
 	  	</div>
+	  	<br></br>
+	  	<h4>Options</h4>
+	  	<h5>Distinct rows:
+			    <input type="checkbox" checked="checked" ng-model="distinct"></h5>
+		<h5>Number of results: <input class="input-mini" type="number" name="input" ng-model="rowcount"
+                     min="0" max="500" style="height: 17px !important;" required></h5>
 	  	<br />
-	  	<button class="btn btn-small btn-inverse" type="button" ng-click="fetchQueryDataSQL()">Fetch</button>
+	  	<div class="centered-pills">
+	  	<button class="btn btn-primary" type="button" ng-click="fetchQueryDataSQL()">Fetch</button>
+	  	</div>
 	  	
 	  	<div id = "data">
-	  		<h4>Data</h4>
+	  		<h4>Data 
+			    <input type="checkbox" checked="checked">
+			</h4>
+			
 	  		<table id="table_id">
 			    <thead>
 			        <tr>
@@ -196,6 +211,7 @@
     <script src="../static/js/bootstrap.min.js"></script>
     <script src="../static/js/bootstrap-select.min.js"></script>
 	<script src="../static/js/jquery.dataTables.min.js"></script>
+	<script src="../static/js/jquery.switch.js"></script>
     <!--<script src="../static/js/dataTables.scroller.min.js"></script>-->
     <script src="http://cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script>
     <script>

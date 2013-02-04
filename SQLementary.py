@@ -14,7 +14,7 @@
 from elm_objects import elm_column, elm_constraint, elm_table
 import sqlsoup
 #from sqlalchemy import MetaData
-from sqlalchemy.sql import column, table, select, join, compiler
+from sqlalchemy.sql import column, table, select, join, compiler, between
 #from sqlalchemy.orm import sessionmaker
 import logging
 from itertools import permutations
@@ -40,7 +40,7 @@ def build_elm_schema(db_full_loc):
     
     return db, elm_tables
 
-def run(database_cnx_loc, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, commandline = False):
+def run(database_cnx_loc, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):
     
     db_full_loc = database_cnx_loc
     db, elm_tables = build_elm_schema(db_full_loc)
@@ -126,15 +126,27 @@ def run(database_cnx_loc, returned_columns, schema = None, username = None, pass
     query = db.session.query()
             
     '''Build the columns to select'''
+#    sqa_select_cols = []
+#    for tc in ret_cols:
+#        t = tc[0]
+#        c = tc[1]
+#        for ec in table_dict[t]._columns._all_cols:
+#            if ec.name == c:
+#                sqa_select_cols.append(ec)
+#                query = query.add_columns(ec)
+#                break
+    def get_column(sqa_table,column_name):
+        for ec in sqa_table._columns._all_cols:
+            if ec.name == column_name:
+                return ec
+        
     sqa_select_cols = []
     for tc in ret_cols:
         t = tc[0]
         c = tc[1]
-        for ec in table_dict[t]._columns._all_cols:
-            if ec.name == c:
-                sqa_select_cols.append(ec)
-                query = query.add_columns(ec)
-                break    
+        ec = get_column(table_dict[t],c)
+        sqa_select_cols.append(ec)
+        query = query.add_columns(ec)
             
     '''Build the joins'''
     query = query.select_from(table_dict[joins[0]])
@@ -143,10 +155,24 @@ def run(database_cnx_loc, returned_columns, schema = None, username = None, pass
     
     '''Add the constraints'''
     for ec in elm_constraints:
-        query = query.filter(str(ec))
+        if ec.operator == "=":
+            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) == ec.val1)
+        elif ec.operator == ">":
+            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) > ec.val1)
+        elif ec.operator == ">=":
+            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) >= ec.val1)   
+        elif ec.operator == "<":
+            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) < ec.val1)   
+        elif ec.operator == "<=":
+            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) <= ec.val1)   
+        elif ec.operator == "!=" or ec.operator == "<>":
+            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) != ec.val1)
+        elif ec.operator == "between" or ec.operator == "btw":
+            query = query.filter(between(get_column(table_dict[ec.table_name],ec.column_name), ec.val1, ec.val2))
         
     '''Make rows distinct'''
-    query = query.distinct()
+    if distinct:
+        query = query.distinct()
     
     '''Limit the number of returned rows'''
     if row_limit:

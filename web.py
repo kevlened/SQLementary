@@ -29,7 +29,9 @@ def get_query_data(query_id):
     desiredcols = [col['table'] + '.' + col['column'] for col in data['desiredcolumns']]
     filters = [[fil['table'] + '.' + fil['column'], fil['operator'], fil['value1'], fil['value2']] for fil in data['filters']]
     relchinookloc = '%s:///%s' % ('sqlite', url_for('static', filename='sample_databases/Chinook_Sqlite.sqlite')[1:])
-    sql, data = run(relchinookloc,desiredcols,constraints=filters)
+    row_count = data['rowlimit']
+    dist = data['distinct'] == True
+    sql, data = run(relchinookloc,desiredcols,constraints=filters,row_limit=row_count,distinct=dist)
     response = json.dumps({'sql': sql, 'data': data})
     return response
 

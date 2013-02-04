@@ -28,7 +28,6 @@ class elm_constraint(object):
         
         self.val2 = val2
         '''val2 (string) = used for BETWEEN operator only'''
-        pass
     
     def __repr__(self):
         if self.val2:

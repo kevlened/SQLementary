@@ -5,7 +5,9 @@ function QueryCtrl($scope, $http) {
     $scope.limit = '';
     $scope.results = '';
     $scope.sql = '';
-    $scope.erd = '';       
+    $scope.erd = '';    
+    $scope.rowcount = 10;  
+    $scope.distinct = true; 
     
     $http.get('/sample1/schema').success(function(data) {
         $scope.schema = data;
@@ -61,14 +63,12 @@ function QueryCtrl($scope, $http) {
     };
     
     $scope.fetchQueryDataSQL = function() {    
-        var request = angular.toJson({desiredcolumns: $scope.desiredcols, filters: $scope.filters});
-		/*$http({
-            method: 'POST',
-            url: '/sample1/query',
-            data: request,
-            headers: {'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'},
-            transformRequest: transform
-        });*/
+        var request = angular.toJson({
+        	desiredcolumns: $scope.desiredcols,
+        	filters: $scope.filters,
+        	rowlimit: $scope.rowcount,
+        	distinct: $scope.distinct        
+        });
         $http.post('/sample1/query', request).success(function(data) {
 	        $scope.sql = data['sql'];
 	        $scope.results = data['data'];
