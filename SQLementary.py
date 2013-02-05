@@ -21,6 +21,7 @@ from itertools import permutations
 import sqlparse
 import sys
 from optparse import OptionParser
+import operator
 
 logging.basicConfig(level=logging.CRITICAL)
 
@@ -125,21 +126,13 @@ def run(database_cnx_loc, returned_columns, schema = None, username = None, pass
     '''Instantiate the query'''
     query = db.session.query()
             
-    '''Build the columns to select'''
-#    sqa_select_cols = []
-#    for tc in ret_cols:
-#        t = tc[0]
-#        c = tc[1]
-#        for ec in table_dict[t]._columns._all_cols:
-#            if ec.name == c:
-#                sqa_select_cols.append(ec)
-#                query = query.add_columns(ec)
-#                break
+    
     def get_column(sqa_table,column_name):
         for ec in sqa_table._columns._all_cols:
             if ec.name == column_name:
                 return ec
-        
+            
+    '''Build the columns to select'''    
     sqa_select_cols = []
     for tc in ret_cols:
         t = tc[0]
@@ -178,46 +171,77 @@ def run(database_cnx_loc, returned_columns, schema = None, username = None, pass
     if row_limit:
         query = query.limit(row_limit)
     
-    '''Execute the full statement'''
+    '''Execute the full statement'''                
+    #db.engine._echo = True
     if commandline:
         if sql:
             '''TODO: fix the dialect hack'''
-            sql = compile_query(query,select(sqa_select_cols).bind.dialect)
+            sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
             sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
             logging.info('Returned query ' + sql)
             print sql
-        else:        
-            #db.engine._echo = True
+        else:
             res = query.all()
             for row in res:
                 logging.info('Data row ' + str(row))
                 print str(row)
     else:
-        sql = compile_query(query,select(sqa_select_cols).bind.dialect)
+        sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
         res = query.all()
         return sql, res
 
-def compile_query(query, dialect):
+def compile_query_sqlite(query, dialect):
     '''
     http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
-    '''    
-#    dialect = query.session.bind.dialect
+    '''   
     statement = query.statement
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
-    enc = dialect.encoding    
-    
-    '''TODO: fix my own hack - only works for sqlite'''
-    params = []
+    enc = dialect.encoding
+    params = {}
     for k,v in comp.params.iteritems():
-        params.append(v)
+        if isinstance(v, unicode):
+            v = v.encode(enc)
+        '''split the key into field and count'''
+        fc = k.rsplit('_',1)
+        f = fc[0]
+        c = fc[1]
+        if not f in params:
+            params[f] = []
+        params[f].append((c,v)) #add a tuple
         
-    state_str = comp.string.encode(enc)
-    state_str = state_str.replace('?', '%s')
-    return state_str % tuple(params)
+    '''replace each dictionary with a sorted list to use as a queue'''
+    for k,v in params.iteritems():
+        params[k] = sorted(params[k], key=lambda k: k[0]) #sort by first val in tuple
+        
+    '''loop through the encoded sql statement and replace the placeholders with values sequentially'''
+    encoded = comp.string.encode(enc)
+    sequence = []
+    index = 0
+    while index < len(encoded):
+        index = encoded.find( '?', index)
+        if index == -1:
+            break
+        
+        param_dist = {}
+        for k,v in params.iteritems():
+            found_at = encoded.rfind(k,0,index)
+            param_dist[k] = index - found_at
+        best = sorted(param_dist.iteritems(), key=operator.itemgetter(1))[0][0]
+        sequence.append(params[best].pop(0)[1])
+        '''Remove empty params'''
+        for k in params.keys():
+            if len(params[k]) < 1:
+                params.pop(k)
+        index += 1
+        
+    encoded = encoded.replace('?', '%s')
+    with_params = encoded % tuple(sequence)
+    decoded = with_params.decode(enc)
+    return decoded
 
 def join_sequence(sqa_tables, needed_table_names):
     
