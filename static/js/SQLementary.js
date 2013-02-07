@@ -1,5 +1,6 @@
 
-function QueryCtrl($scope, $http) {
+var myApp = angular.module('myApp', []);
+myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     $scope.desiredcols = new Array();
     $scope.filters = new Array();
     $scope.limit = '';
@@ -77,5 +78,5 @@ function QueryCtrl($scope, $http) {
     
     var transform = function(data){
         return $.param(data);
-    }
-};
+    };
+}]);

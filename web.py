@@ -35,6 +35,6 @@ def get_query_data(query_id):
 if __name__ == "__main__":
     # Start server    
     app.debug = False    
-    #app.run()
-    port = int(os.environ.get("PORT", 80))
-    app.run('0.0.0.0', port)
+    app.run()
+    #port = int(os.environ.get("PORT", 80))
+    #app.run('0.0.0.0', port)
