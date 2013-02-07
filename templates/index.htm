@@ -1,37 +1,18 @@
 <!DOCTYPE html>
-    
-    
-    <!--[if lt IE 9]>
-          <script>
-            document.createElement('ng-include');
-            document.createElement('ng-pluralize');
-            document.createElement('ng-view');
-            document.createElement('ng:include');
-            document.createElement('ng:pluralize');
-            document.createElement('ng:view');
-          </script>
-        <![endif]-->
-        
-            <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
-    <!--[if lt IE 9]>
-      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
-    <![endif]-->
-        
-<html lang="en" class="ng-app:myApp" id="ng-app" ng-app="myApp" xmlns:ng="http://angularjs.org">
+<html lang="en" ng-app>
   <head>
     <meta charset="utf-8">
     <title>SQLementary</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="">
-    <meta name="author" content="">
-
+    <meta name="author" content="">    
     
     <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.0.4/angular.min.js"></script>
 
     <!-- Le styles -->
 	<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
     <link href="../static/css/SQLementary.css" rel="stylesheet">
-	<!--<link rel="stylesheet" type="text/css" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">-->
+	<link rel="stylesheet" type="text/css" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">
 	
     <style type="text/css">
       body {
@@ -72,6 +53,11 @@
     </style>	
 	<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-responsive.min.css" rel="stylesheet">
 
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
     <!-- Fav and touch icons -->
     <link rel="apple-touch-icon-precomposed" sizes="144x144" href="ico/apple-touch-icon-144-precomposed.png">
     <link rel="apple-touch-icon-precomposed" sizes="114x114" href="ico/apple-touch-icon-114-precomposed.png">
@@ -80,7 +66,7 @@
                                    <link rel="shortcut icon" href="ico/favicon.png">
   </head>
 
-  <body ng-controller="QueryCtrl">
+  <body ng-controller="QueryCtrl" ng-cloak>
 
     <div class="container-narrow">
 
@@ -222,15 +208,15 @@
     <!-- Placed at the end of the document so the pages load faster -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
 	<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
-	<!--<script src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>-->
+	<script src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script>
     <script>
   $(document).ready(function() {
-    //$('#myTab a:first').tab('show');
-    /*$('#table_id').dataTable(
+    $('#myTab a:first').tab('show');
+    $('#table_id').dataTable(
     	{"sScrollY": "200px",
 		"sDom": "frtiS",
-		"bDeferRender": true});*/
+		"bDeferRender": true});
   })
 </script>
     <script src="../static/js/SQLementary.js"></script>
