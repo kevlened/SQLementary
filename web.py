@@ -29,6 +29,15 @@ def get_query_data(query_id):
     row_count = data['rowlimit']
     dist = data['distinct'] == True
     sql, data = run(relchinookloc,desiredcols,constraints=filters,row_limit=row_count,distinct=dist)
+    
+    '''Guarantee all data is in string format'''
+    for t in range(len(data)):
+        tpl = data[t]
+        tuple_string = []
+        for item in tpl:
+            tuple_string.append(str(item))
+        data[t] = tuple(tuple_string)
+                
     response = json.dumps({'sql': sql, 'data': data})
     return response
 
