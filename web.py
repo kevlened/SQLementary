@@ -15,10 +15,12 @@ def index():
 @app.route('/sample<int:query_id>/schema', methods=['GET', 'POST'])
 def get_schema(query_id):
     if query_id == 1:
-        relchinookloc = url_for('static', filename='sample_databases/Chinook_Sqlite.sqlite')[1:] # Remove the leading forward slash        
+        #relchinookloc = url_for('static', filename='sample_databases/Chinook_Sqlite.sqlite')[1:] # Remove the leading forward slash        
+        relchinookloc = 'static/sample_databases/Chinook_Sqlite.sqlite'
         db, schema = build_elm_schema('%s:///%s' % ('sqlite', relchinookloc))
-        schema_dict = {tab.name:[col.name for col in tab.elm_columns] for tab in schema}
-        return json.dumps(schema_dict)
+        schema_dict = {tab.name:{col.name:str(col.type) for col in tab.elm_columns} for tab in schema}
+        schema_json = json.dumps(schema_dict)
+        return schema_json
     
 @app.route('/sample<int:query_id>/query', methods=['GET', 'POST'])
 def get_query_data(query_id):

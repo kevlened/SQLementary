@@ -107,7 +107,7 @@
 		          <option value="">Select Table</option>
 		        </select>
 			    <ng-switch on="!!col.table">
-			    <select class="span2" ng-model="col.column" ng-options="option for option in schema[col.table]" ng-switch-when="true">
+			    <select class="span2" ng-model="col.column" ng-options="key as key for (key, value) in schema[col.table]" ng-switch-when="true">
 		          <option value="">Select Column</option>
 		        </select>
 				</ng-switch>
@@ -121,32 +121,53 @@
 	  		<ul class="unstyled" ng-repeat="fil in filters">
 		  	<li>
 		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
-		  		<select class="span2" ng-model="fil.table" ng-options="option for option in typeOptions">
+		  		<select name='table' class="span2" ng-model="fil.table" ng-options="option for option in typeOptions">
 		          <option value="">Select Table</option>
 		        </select>
+		        
 			    <ng-switch on="!!fil.table">
-			    <select class="span2" ng-model="fil.column" ng-options="option for option in schema[fil.table]" ng-switch-when="true">
+			    <select name='column' class="span2" ng-model="fil.column" ng-options="key as key for (key, value) in schema[fil.table]" ng-switch-when="true">
 		          <option value="">Select Column</option>
 		        </select>						
 		        </ng-switch>
 		        <ng-switch on="!!fil.table && !!fil.column">
 		        <span ng-switch-when="true">
-				<select class="selectpicker span1" ng-model="fil.operator">
-					<option>&#061;</option>	
-					<option>&#060;</option>				
-					<option>&#060;&#061;</option>
-					<option>&#062;</option>
-					<option>&#062;&#061;</option>
-					<option>&#060;&#062;</option>
-				    <option value="between">Btw</option>
-				</select>
-				<input ng-model="fil.value1" type="text" class="value1 span2"></input>
-				</span>
-				</ng-switch>	
-				<ng-switch on="fil.operator=='between'">	
-				<input ng-model="fil.value2" type="text" class="value2 span2" ng-switch-when="true"></input>
+					<select class="selectpicker span1" ng-model="fil.operator">
+						<option>&#061;</option>	
+						<option>&#060;</option>				
+						<option>&#060;&#061;</option>
+						<option>&#062;</option>
+						<option>&#062;&#061;</option>
+						<option>&#060;&#062;</option>
+					    <option value="between">Btw</option>
+					</select>
+					
+					<!--
+					<ng-switch on=schema[fil.table][fil.column]>
+						<input type="number" ng-model="fil.value1" class="value1 span2" ng-switch-when="INTEGER"></input>
+						<span ng-switch-default>
+							<input type="text" ng-model="fil.value1" class="value1 span2"></input>
+						</span>
+					</ng-switch>
+					-->
+					<input type="text" ng-model="fil.value1" class="value1 span2"></input>
+									
 				</ng-switch>
-				
+				<ng-switch on="fil.operator=='between'">
+					<span ng-switch-when="true">
+						
+						<!--
+						<ng-switch on=schema[fil.table][fil.column]>
+							<input type="number" ng-model="fil.value2" class="value2 span2" ng-switch-when="INTEGER"></input>
+							<span ng-switch-default>
+								<input type="text" ng-model="fil.value2" class="value2 span2"></input>
+							</span>
+						</ng-switch>
+						-->
+						<input type="text" ng-model="fil.value2" class="value2 span2"></input>
+					</span>
+				</ng-switch>				
+				</span>
 			</li>
 			</ul>
 			<button class="btn btn-small btn-inverse" type="button" ng-click="addFilter()">Add Filter</button>
@@ -171,6 +192,7 @@
 			    <thead>
 			        <tr>
 			            <th ng-repeat="col in desiredcols">{{'{{col.table + "." + col.column}}'}}</th>
+			            <p>{{'{{col.column + col.table + "." + schema[col.table][col.column]}}'}}</p>
 			        </tr>
 			    </thead>
 			    <tbody>

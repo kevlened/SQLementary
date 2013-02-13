@@ -49,6 +49,8 @@ class elm_column(object):
         self.parent_table = self.data._from_objects[0].name
         '''parent_table (string) = table name of the table this column belongs to'''
         
+        self.type = column_data.type
+        
         self.constraint = None
         '''constraint (elm_constraint) = how the column should be constrained (operator & values)'''
         pass
