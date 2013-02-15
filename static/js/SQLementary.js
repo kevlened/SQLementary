@@ -10,7 +10,7 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     $scope.rowcount = 10;  
     $scope.distinct = true; 
     
-    $http.get('/sample1/schema').success(function(data) {
+    $http.get('/sample2/schema').success(function(data) {
         $scope.schema = data;
         $scope.typeOptions = [];
         for (var tab in $scope.schema){        	
@@ -58,7 +58,7 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     };
 
     $scope.fetchErd = function() {
-        $http.get('/sample1/erd').success(function(data) {
+        $http.get('/sample2/erd').success(function(data) {
 	        $scope.erd = data;
     	});
     };
@@ -70,7 +70,7 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
         	rowlimit: $scope.rowcount,
         	distinct: $scope.distinct        
         });
-        $http.post('/sample1/query', request).success(function(data) {
+        $http.post('/sample2/query', request).success(function(data) {
 	        $scope.sql = data['sql'];
 	        $scope.results = data['data'];
     	});

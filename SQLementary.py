@@ -22,12 +22,14 @@ import sqlparse
 import sys
 from optparse import OptionParser
 import operator
+from sqlalchemy.engine.url import URL
+import re
 
 logging.basicConfig(level=logging.CRITICAL)
+#logging.basicConfig(filename='db.log', level=logging.CRITICAL)
+#logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
-def build_elm_schema(db_full_loc):
-    db = sqlsoup.SQLSoup(db_full_loc)
-    
+def build_elm_schema(db):
     elm_tables = []
     
     logging.info('Pulling table and column Metadata from database')
@@ -39,12 +41,24 @@ def build_elm_schema(db_full_loc):
     for sqa_table in sqa_tables:
         elm_tables.append(elm_table(sqa_table))
     
-    return db, elm_tables
+    return elm_tables
 
-def run(database_cnx_loc, returned_columns, schema = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):
+def get_connection(db_type, full_name, host = None, port = None, username = None, password = None):
+    #URL(drivername, username=None, password=None, host=None, port=None, database=None, query=None)
+    if db_type == "sqlite":
+        cnx = URL("sqlite", username = username, password = password, database = full_name)
+        db = sqlsoup.SQLSoup(str(cnx))
+    if db_type == "oracle":
+        cnx = URL("oracle+cx_oracle", username = username, password = password, database = full_name, host = host, port = port)
+        db = sqlsoup.SQLSoup(str(cnx))            
+    #oracle+cx_oracle://user:pass@host:port/dbname[?key=value&key=value...]
+    return db
+
+def run(db_type, loc, returned_columns, host = None, port = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):
     
-    db_full_loc = database_cnx_loc
-    db, elm_tables = build_elm_schema(db_full_loc)
+    #db_full_loc = database_cnx_loc
+    db = get_connection(db_type, loc, host = host, port = port, username = username, password = password)
+    elm_tables = build_elm_schema(db)
     elm_constraints = []
     
     logging.info('Pulling table and column Metadata from database')
@@ -186,11 +200,32 @@ def run(database_cnx_loc, returned_columns, schema = None, username = None, pass
                 logging.info('Data row ' + str(row))
                 print str(row)
     else:
-        sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
+        if db_type == "sqlite":
+            sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
+        elif db_type == "oracle":
+            sql = compile_query_oracle(query,select(sqa_select_cols).bind.dialect)
+        else:
+            sql = "Unable to generate sql for " + db_type
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
         res = query.all()
         return sql, res
+
+def compile_query_oracle(query, dialect):
+    '''
+    http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
+    As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
+    http://stackoverflow.com/questions/6350411/how-to-retrieve-executed-sql-code-from-sqlalchemy
+    '''   
+    statement = query.statement
+    comp = compiler.SQLCompiler(dialect, statement)
+    statement = str(statement).replace('\n', '')
+    params = {}
+    for k,v in comp.params.iteritems():
+        if re.match('param_\d*', k):
+            k = k.replace('param', 'ROWNUM')
+        statement = re.sub(':' + str(k), str(v), statement)
+    return statement
 
 def compile_query_sqlite(query, dialect):
     '''
