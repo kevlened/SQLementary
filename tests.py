@@ -56,12 +56,24 @@ class MainPostgresTest(EngineTest):
         self.username = 'postgres'
         self.password = 'password'
         self.sample_id = 4
+        
+class MainMSsqlTest(EngineTest):
+    '''https://groups.google.com/d/msg/sqlalchemy/K9wJReDp-gM/LDn5xKStvEcJ'''
+    def setUp(self):
+        self.db_type = 'mssql'
+        self.host = 'localhost'
+        self.port = '1433'
+        self.full_name = 'master'
+        self.username = 'sa'
+        self.password = 'ASDqwe123'
+        self.sample_id = 5
 
 if __name__ == '__main__':    
     suite = unittest.TestSuite()
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainSqliteTest))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainOracleTest))
     suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainMySQLTest))
-    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainPostgresTest))
+    #suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainPostgresTest))
+    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainMSsqlTest))
 #    suite.addTests(unittest.TestLoader().loadTestsFromTestCase(MainWebTest))
     unittest.TextTestRunner(verbosity=2).run(suite)

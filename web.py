@@ -43,6 +43,13 @@ def get_schema(query_id):
         full_name = 'pg_catalog'
         username = 'postgres'
         password = 'password'
+    elif query_id == 5:
+        db_type = 'mssql'
+        host = 'localhost'
+        port = '1433'
+        full_name = 'master'
+        username = 'sa'
+        password = 'ASDqwe123'
     else:
         raise Exception("That sample isn't available")
         
@@ -99,7 +106,14 @@ def get_query_data(query_id):
             port = '5432'
             full_name = 'pg_catalog'
             username = 'postgres'
-            password = 'password'
+            password = 'password'        
+        elif query_id == 5:
+            db_type = 'mssql'
+            host = 'localhost'
+            port = '1433'
+            full_name = 'master'
+            username = 'sa'
+            password = 'ASDqwe123'
         else:
             raise Exception("That sample isn't available")       
 #run(db_type, loc, returned_columns, host = None, port = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):        

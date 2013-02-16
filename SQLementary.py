@@ -57,6 +57,9 @@ def get_connection(db_type, full_name, host = None, port = None, username = None
     elif db_type == "postgres":
         cnx = URL("postgres", username = username, password = password, database = full_name, host = host, port = port)
         db = sqlsoup.SQLSoup(str(cnx))
+    elif db_type == "mssql":
+        cnx = URL("mssql+pyodbc", username = username, password = password, database = full_name, host = host, port = port)
+        db = sqlsoup.SQLSoup(str(cnx))
     else:
         raise Exception(db_type + " isn't a supported database type")
     return db
