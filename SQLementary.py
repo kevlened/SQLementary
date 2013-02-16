@@ -44,19 +44,25 @@ def build_elm_schema(db):
     return elm_tables
 
 def get_connection(db_type, full_name, host = None, port = None, username = None, password = None):
-    #URL(drivername, username=None, password=None, host=None, port=None, database=None, query=None)
+    '''Allows us to define our own default database drivers'''
     if db_type == "sqlite":
         cnx = URL("sqlite", username = username, password = password, database = full_name)
         db = sqlsoup.SQLSoup(str(cnx))
-    if db_type == "oracle":
+    elif db_type == "oracle":
         cnx = URL("oracle+cx_oracle", username = username, password = password, database = full_name, host = host, port = port)
-        db = sqlsoup.SQLSoup(str(cnx))            
-    #oracle+cx_oracle://user:pass@host:port/dbname[?key=value&key=value...]
+        db = sqlsoup.SQLSoup(str(cnx))
+    elif db_type == "mysql":
+        cnx = URL("mysql+mysqldb", username = username, password = password, database = full_name, host = host, port = port)
+        db = sqlsoup.SQLSoup(str(cnx))
+    elif db_type == "postgres":
+        cnx = URL("postgres", username = username, password = password, database = full_name, host = host, port = port)
+        db = sqlsoup.SQLSoup(str(cnx))
+    else:
+        raise Exception(db_type + " isn't a supported database type")
     return db
 
 def run(db_type, loc, returned_columns, host = None, port = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):
     
-    #db_full_loc = database_cnx_loc
     db = get_connection(db_type, loc, host = host, port = port, username = username, password = password)
     elm_tables = build_elm_schema(db)
     elm_constraints = []
@@ -204,8 +210,11 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
         elif db_type == "oracle":
             sql = compile_query_oracle(query,select(sqa_select_cols).bind.dialect)
+        elif db_type == "mysql":
+            sql = compile_query_mysql(query,select(sqa_select_cols).bind.dialect)
         else:
             sql = "Unable to generate sql for " + db_type
+            
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
         res = query.all()
@@ -226,6 +235,22 @@ def compile_query_oracle(query, dialect):
             k = k.replace('param', 'ROWNUM')
         statement = re.sub(':' + str(k), str(v), statement)
     return statement
+
+def compile_query_mysql(query, dialect):
+    from sqlalchemy.sql import compiler
+    from MySQLdb.converters import conversions, escape
+
+    statement = query.statement
+    comp = compiler.SQLCompiler(dialect, statement)
+    comp.compile()
+    enc = dialect.encoding
+    params = []
+    for k in comp.positiontup:
+        v = comp.params[k]
+        if isinstance(v, unicode):
+            v = v.encode(enc)
+        params.append( escape(v, conversions) )
+    return (comp.string.encode(enc) % tuple(params)).decode(enc)
 
 def compile_query_sqlite(query, dialect):
     '''
@@ -390,7 +415,8 @@ def main():
     if options.constraints:
         cons = [c.split(',') for c in options.constraints]
         
-    run('%s:///%s' % (options.db_type, options.db_location),\
+    run(options.db_type,\
+        options.db_location,\
         options.columns,\
         schema = options.schema,\
         username = options.username,\

@@ -29,6 +29,22 @@ def get_schema(query_id):
         full_name = 'xe'
         username = 'SYSTEM'
         password = 'password'
+    elif query_id == 3:
+        db_type = 'mysql'
+        host = 'localhost'
+        port = '3306'
+        full_name = 'sakila'
+        username = 'root'
+        password = 'password'
+    elif query_id == 4:
+        db_type = 'postgres'
+        host = 'localhost'
+        port = '5432'
+        full_name = 'pg_catalog'
+        username = 'postgres'
+        password = 'password'
+    else:
+        raise Exception("That sample isn't available")
         
     db = get_connection(db_type, full_name, host = host, port = port, username = username, password = password)
     schema = build_elm_schema(db)
@@ -70,8 +86,22 @@ def get_query_data(query_id):
             full_name = 'xe'
             username = 'SYSTEM'
             password = 'password'
+        elif query_id == 3:
+            db_type = 'mysql'
+            host = 'localhost'
+            port = '3306'
+            full_name = 'sakila'
+            username = 'root'
+            password = 'password'
+        elif query_id == 4:
+            db_type = 'postgres'
+            host = 'localhost'
+            port = '5432'
+            full_name = 'pg_catalog'
+            username = 'postgres'
+            password = 'password'
         else:
-            return "That sample isn't available"        
+            raise Exception("That sample isn't available")       
 #run(db_type, loc, returned_columns, host = None, port = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):        
         sql, data = run(db_type, full_name, desiredcols, \
                         host = host, port = port, \
