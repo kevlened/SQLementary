@@ -103,6 +103,9 @@
 	  		<ul class="unstyled"  ng-repeat="col in desiredcols">
 	  		<li>
 	  			<a ng-click="removeColumn(col)"><i class="icon-remove"></i></a>
+	  			<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
+		          <option value="">Aggregate</option>
+		        </select>
 				<select class="span2" ng-model="col.table" ng-options="option for option in typeOptions">
 		          <option value="">Select Table</option>
 		        </select>
@@ -121,6 +124,10 @@
 	  		<ul class="unstyled" ng-repeat="fil in filters">
 		  	<li>
 		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
+		  		<select class="span1" ng-model="fil.aggregate" ng-options="option for option in aggOptions">
+		          <option value="">Aggregate</option>
+		        </select>
+		        
 		  		<select name='table' class="span2" ng-model="fil.table" ng-options="option for option in typeOptions">
 		          <option value="">Select Table</option>
 		        </select>
@@ -191,8 +198,8 @@
 	  		<table id="table_id">
 			    <thead>
 			        <tr>
-			            <th ng-repeat="col in desiredcols">{{'{{col.table + "." + col.column}}'}}</th>
-			            <p>{{'{{col.column + col.table + "." + schema[col.table][col.column]}}'}}</p>
+			            <th ng-repeat="col in desiredcols">{{'{{col.aggregate + " " + col.table + "." + col.column}}'}}</th>
+			            <!--<p>{{'{{col.column + col.table + "." + schema[col.table][col.column]}}'}}</p>-->
 			        </tr>
 			    </thead>
 			    <tbody>

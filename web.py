@@ -74,8 +74,10 @@ def get_schema(query_id):
 def get_query_data(query_id):
     if query_id:        
         data = request.json
-        desiredcols = [col['table'] + '.' + col['column'] for col in data['desiredcolumns']]
-        filters = [[fil['table'] + '.' + fil['column'], fil['operator'], fil['value1'], fil['value2']] for fil in data['filters']]           
+        #desiredcols = [col['table'] + '.' + col['column'] for col in data['desiredcolumns']]
+        desiredcols = [[col['table'],col['column'],col['aggregate']] for col in data['desiredcolumns']]
+        #filters = [[fil['table'] + '.' + fil['column'], fil['operator'], fil['value1'], fil['value2']] for fil in data['filters']]
+        filters = [(fil['table'],fil['column'], fil['aggregate'], fil['operator'], fil['value1'], fil['value2']) for fil in data['filters']]           
         row_count = data['rowlimit']
         dist = data['distinct'] == True
         

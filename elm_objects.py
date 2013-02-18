@@ -12,7 +12,7 @@
 
 class elm_constraint(object):
     '''Represents a constraint on a particular column'''
-    def __init__(self, table_name, column_name, operator, val1, val2):
+    def __init__(self, table_name, column_name, operator, val1, val2, aggregate):
                 
         self.table_name = table_name
         '''table_name (string) = table name of associated column'''
@@ -28,6 +28,8 @@ class elm_constraint(object):
         
         self.val2 = val2
         '''val2 (string) = used for BETWEEN operator only'''
+        
+        self.aggregate = aggregate
     
     def __repr__(self):
         if self.val2:

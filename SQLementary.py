@@ -25,6 +25,8 @@ import operator
 from sqlalchemy.engine.url import URL
 import re
 
+from sqlalchemy import func
+
 logging.basicConfig(level=logging.CRITICAL)
 #logging.basicConfig(filename='db.log', level=logging.CRITICAL)
 #logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
@@ -82,37 +84,30 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     logging.info('Building a list of constraint objects from constraint list argument')
     if constraints:
         for c in constraints:
+            table = c[0]
+            column = c[1]
+            aggregate = c[2]
+            operator = c[3]
+            value1 = c[4]            
+            
             '''Sanitize val2'''
-            if len(c) == 3:
-                c.append(None)
-            if c[3] == '':
-                c[3] = None
+            value2 = c[5] if len(c) == 6 else None
+            value2 = None if value2 == '' else value2
             
-            tab_col = c[0].split('.')
-            'TODO: Add additional table/column validation'
-            if len(tab_col) != 2:
-                raise Exception ('The column ' + str(c[0]) + ' is ambiguous or not in the right format')
-                                  
-            tab = tab_col[0]
-            col = tab_col[1]
-            op = c[1]
-            v1 = c[2]
-            v2 = c[3]
-            
-            elm_constraints.append(elm_constraint(tab,col,op,v1,v2))
+            elm_constraints.append(elm_constraint(table, column, operator, value1, value2, aggregate))
     
     logging.info('Building a list of necessary tables')
     ret_cols = []
     for tab_col in returned_columns:
-        tc = tab_col.split('.')
-        if len(tc) != 2:
-            raise Exception ('The column ' + tab_col + ' is ambiguous or not in the right format')
-        ret_cols.append([tc[0], tc[1]])
+        table = tab_col[0]
+        column = tab_col[1]
+        ret_cols.append([table, column])
         
     tabs_temp = set([table_column[0] for table_column in ret_cols])    
     con_tabs_temp = set([con.table_name for con in elm_constraints])    
     tabs_temp = tabs_temp.union(con_tabs_temp)
     
+    '''Add the tables from the constraints to the validation'''
     col_tab_all = ret_cols[:]
     if len(elm_constraints) > 0:
         for con in elm_constraints:
@@ -147,8 +142,8 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     table_dict = {tab.name:tab.data for tab in elm_tables}
     
     '''Instantiate the query'''
-    query = db.session.query()
-            
+#    query = db.session.query()
+    query = select()            
     
     def get_column(sqa_table,column_name):
         for ec in sqa_table._columns._all_cols:
@@ -157,17 +152,56 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             
     '''Build the columns to select'''    
     sqa_select_cols = []
-    for tc in ret_cols:
+            
+    '''Find columns that don't have an aggregate'''
+    sqa_non_aggregate = []
+    sqa_aggregate = []
+    for tc in returned_columns:
         t = tc[0]
         c = tc[1]
+        a = tc[2]
         ec = get_column(table_dict[t],c)
-        sqa_select_cols.append(ec)
-        query = query.add_columns(ec)
+        if a == '':
+            sqa_non_aggregate.append(ec)
+            sqa_select_cols.append(ec)
+        else:
+            sqa_aggregate.append((a,ec))
+    
+    if len(sqa_aggregate) > 0:
+        sql_aggregate_cols = []
+        for agg_col in sqa_aggregate:
+            aggregate = agg_col[0]
+            column = agg_col[1]
+            
+            if aggregate == 'COUNT':
+                #query = db.session.query(func.count(column))
+                sqa_select_cols.append(func.count(column))
+            elif aggregate == 'SUM':
+                sqa_select_cols.append(func.sum(column))
+            elif aggregate == 'AVG':
+                sqa_select_cols.append(func.avg(column))
+            elif aggregate == 'MIN':
+                sqa_select_cols.append(func.min(column))
+            elif aggregate == 'MAX':
+                sqa_select_cols.append(func.max(column))
+    
+    query = select(sqa_select_cols)
+    
+#    sqa_select_cols = []
+#    for tc in returned_columns:
+#        t = tc[0]
+#        c = tc[1]
+#        ec = get_column(table_dict[t],c)
+#        sqa_select_cols.append(ec)
+#        query = query.add_columns(ec)
             
     '''Build the joins'''
-    query = query.select_from(table_dict[joins[0]])
+    #query = query.select_from(table_dict[joins[0]])
+    sqa_joins = table_dict[joins[0]]
     for i in range(1,len(joins)):
-        query = query.join(table_dict[joins[i]])
+        sqa_joins = sqa_joins.join(table_dict[joins[i]])
+        
+    query = query.select_from(sqa_joins)
     
     '''Add the constraints'''
     for ec in elm_constraints:
@@ -196,10 +230,14 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     
     '''Execute the full statement'''                
     #db.engine._echo = True
+    
+    '''TODO: fix the dialect hack'''
+    dialect = select([get_column(table_dict[returned_columns[0][0]],returned_columns[0][1])]).bind.dialect
+    #query = db.session.query(l_query)
+                             
     if commandline:
         if sql:
-            '''TODO: fix the dialect hack'''
-            sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
+            sql = compile_query_sqlite(query,dialect)
             sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
             logging.info('Returned query ' + sql)
             print sql
@@ -210,17 +248,17 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
                 print str(row)
     else:
         if db_type == "sqlite":
-            sql = compile_query_sqlite(query,select(sqa_select_cols).bind.dialect)
+            sql = compile_query_sqlite(query,dialect)            
         elif db_type == "oracle":
-            sql = compile_query_oracle(query,select(sqa_select_cols).bind.dialect)
+            sql = compile_query_oracle(query,dialect)
         elif db_type == "mysql":
-            sql = compile_query_mysql(query,select(sqa_select_cols).bind.dialect)
+            sql = compile_query_mysql(query,dialect)
         else:
             sql = "Unable to generate sql for " + db_type
             
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
-        res = query.all()
+        res = db.engine.execute(query).fetchall()
         return sql, res
 
 def compile_query_oracle(query, dialect):
@@ -229,7 +267,7 @@ def compile_query_oracle(query, dialect):
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
     http://stackoverflow.com/questions/6350411/how-to-retrieve-executed-sql-code-from-sqlalchemy
     '''   
-    statement = query.statement
+    statement = query
     comp = compiler.SQLCompiler(dialect, statement)
     statement = str(statement).replace('\n', '')
     params = {}
@@ -243,7 +281,7 @@ def compile_query_mysql(query, dialect):
     from sqlalchemy.sql import compiler
     from MySQLdb.converters import conversions, escape
 
-    statement = query.statement
+    statement = query
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
     enc = dialect.encoding
@@ -260,7 +298,7 @@ def compile_query_sqlite(query, dialect):
     http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
     '''   
-    statement = query.statement
+    statement = query
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
     enc = dialect.encoding
