@@ -188,6 +188,10 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     
     query = select(sqa_select_cols)
     
+    if len(sqa_aggregate) > 0:
+        for na in sqa_non_aggregate:
+            query = query.group_by(na)        
+    
 #    sqa_select_cols = []
 #    for tc in returned_columns:
 #        t = tc[0]
@@ -228,6 +232,7 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     query = query.select_from(sqa_joins)
     
     '''Add the constraints'''
+    sqa_filters = []
     for ec in elm_constraints:
         if ec.operator == "=":
             query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) == ec.val1)
