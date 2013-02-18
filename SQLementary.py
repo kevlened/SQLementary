@@ -142,71 +142,25 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     '''Make it easy to find table data via a dictionary'''
     table_dict = {tab.name:tab.data for tab in elm_tables}
     
-    '''Instantiate the query'''
-#    query = db.session.query()
-    query = select()            
+    '''Instantiate the query
+        -Needs to be the session.Query, not a simple select so we can add filters'''
+    query = db.session.query()  
     
     def get_column(sqa_table,column_name):
         for ec in sqa_table._columns._all_cols:
             if ec.name == column_name:
                 return ec
             
-    '''Build the columns to select'''    
-    sqa_select_cols = []
-            
-    '''Find columns that don't have an aggregate'''
-    sqa_non_aggregate = []
-    sqa_aggregate = []
-    for tc in returned_columns:
-        t = tc[0]
-        c = tc[1]
-        a = tc[2]
-        ec = get_column(table_dict[t],c)
-        if a == '':
-            sqa_non_aggregate.append(ec)
-            sqa_select_cols.append(ec)
-        else:
-            sqa_aggregate.append((a,ec))
-    
-    if len(sqa_aggregate) > 0:
-        sql_aggregate_cols = []
-        for agg_col in sqa_aggregate:
-            aggregate = agg_col[0]
-            column = agg_col[1]
-            
-            if aggregate == 'COUNT':
-                #query = db.session.query(func.count(column))
-                sqa_select_cols.append(func.count(column))
-            elif aggregate == 'SUM':
-                sqa_select_cols.append(func.sum(column))
-            elif aggregate == 'AVG':
-                sqa_select_cols.append(func.avg(column))
-            elif aggregate == 'MIN':
-                sqa_select_cols.append(func.min(column))
-            elif aggregate == 'MAX':
-                sqa_select_cols.append(func.max(column))
-    
-    query = select(sqa_select_cols)
-    
-    if len(sqa_aggregate) > 0:
-        for na in sqa_non_aggregate:
-            query = query.group_by(na)        
-    
-#    sqa_select_cols = []
-#    for tc in returned_columns:
-#        t = tc[0]
-#        c = tc[1]
-#        ec = get_column(table_dict[t],c)
-#        sqa_select_cols.append(ec)
-#        query = query.add_columns(ec)
-            
-    '''Build the joins'''
-    #query = query.select_from(table_dict[joins[0]])
+    '''Build the joins
+        -Needs to be performed before adding columns to prevent session.Query
+        from generating excess joins'''
+    query = query.select_from(table_dict[joins[0]])
     sqa_joins = table_dict[joins[0]]
     for i in range(1,len(joins)):
         second_table = table_dict[joins[i]]
         try:
             sqa_joins = sqa_joins.join(second_table)
+            query = query.join(second_table)
         except AmbiguousForeignKeysError:
             '''TODO: Assign a priority for primary keys from the order columns are requested'''
                       
@@ -228,11 +182,47 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
                     second_column = fk.parent
                     
             sqa_joins = sqa_joins.join(second_table, first_column == second_column)
-        
-    query = query.select_from(sqa_joins)
+            query = query.join(second_table, first_column == second_column)
+            
+    '''Build the columns to select'''    
+    sqa_select_cols = []
+            
+    '''Find columns that don't have an aggregate
+    Find columns that do have an aggregate
+    Create list of columns to select
+        -(must be done together to preserve order)'''
+    sqa_non_aggregate = []
+    sqa_aggregate = []
+    for tc in returned_columns:
+        t = tc[0]
+        c = tc[1]
+        a = tc[2]
+        ec = get_column(table_dict[t],c)
+        if a == '':
+            sqa_non_aggregate.append(ec)
+            sqa_select_cols.append(ec)
+        else:
+            sqa_aggregate.append((a,ec))
+            aggregate = a
+            column = ec
+            if aggregate == 'COUNT':
+                sqa_select_cols.append(func.count(column))
+            elif aggregate == 'SUM':
+                sqa_select_cols.append(func.sum(column))
+            elif aggregate == 'AVG':
+                sqa_select_cols.append(func.avg(column))
+            elif aggregate == 'MIN':
+                sqa_select_cols.append(func.min(column))
+            elif aggregate == 'MAX':
+                sqa_select_cols.append(func.max(column))
+    
+    query = query.add_columns(*sqa_select_cols)
+    
+    if len(sqa_aggregate) > 0:
+        for na in sqa_non_aggregate:
+            query = query.group_by(na)        
     
     '''Add the constraints'''
-    sqa_filters = []
     for ec in elm_constraints:
         if ec.operator == "=":
             query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) == ec.val1)
@@ -262,7 +252,6 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     
     '''TODO: fix the dialect hack'''
     dialect = select([get_column(table_dict[returned_columns[0][0]],returned_columns[0][1])]).bind.dialect
-    #query = db.session.query(l_query)
                              
     if commandline:
         if sql:
@@ -287,7 +276,7 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             
         sql = sqlparse.format(sql, reindent=True, keyword_case='upper')
         logging.info('Returned query ' + sql)
-        res = db.engine.execute(query).fetchall()
+        res = query.all()
         return sql, res
 
 def compile_query_oracle(query, dialect):
@@ -296,7 +285,7 @@ def compile_query_oracle(query, dialect):
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
     http://stackoverflow.com/questions/6350411/how-to-retrieve-executed-sql-code-from-sqlalchemy
     '''   
-    statement = query
+    statement = query.statement
     comp = compiler.SQLCompiler(dialect, statement)
     statement = str(statement).replace('\n', '')
     params = {}
@@ -310,7 +299,7 @@ def compile_query_mysql(query, dialect):
     from sqlalchemy.sql import compiler
     from MySQLdb.converters import conversions, escape
 
-    statement = query
+    statement = query.statement
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
     enc = dialect.encoding
@@ -327,7 +316,7 @@ def compile_query_sqlite(query, dialect):
     http://stackoverflow.com/questions/4617291/how-do-i-get-a-raw-compiled-sql-query-from-a-sqlalchemy-expression
     As it turns out, I need to modify the compiler to be specific to SQLite or whatever db I want
     '''   
-    statement = query
+    statement = query.statement
     comp = compiler.SQLCompiler(dialect, statement)
     comp.compile()
     enc = dialect.encoding

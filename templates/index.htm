@@ -124,9 +124,10 @@
 	  		<ul class="unstyled" ng-repeat="fil in filters">
 		  	<li>
 		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
+		  		<!--
 		  		<select class="span1" ng-model="fil.aggregate" ng-options="option for option in aggOptions">
 		          <option value="">Aggregate</option>
-		        </select>
+		        </select>-->
 		        
 		  		<select name='table' class="span2" ng-model="fil.table" ng-options="option for option in typeOptions">
 		          <option value="">Select Table</option>
