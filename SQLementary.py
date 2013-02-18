@@ -26,6 +26,7 @@ from sqlalchemy.engine.url import URL
 import re
 
 from sqlalchemy import func
+from sqlalchemy.exc import AmbiguousForeignKeysError
 
 logging.basicConfig(level=logging.CRITICAL)
 #logging.basicConfig(filename='db.log', level=logging.CRITICAL)
@@ -199,7 +200,30 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     #query = query.select_from(table_dict[joins[0]])
     sqa_joins = table_dict[joins[0]]
     for i in range(1,len(joins)):
-        sqa_joins = sqa_joins.join(table_dict[joins[i]])
+        second_table = table_dict[joins[i]]
+        try:
+            sqa_joins = sqa_joins.join(second_table)
+        except AmbiguousForeignKeysError:
+            '''TODO: Assign a priority for primary keys from the order columns are requested'''
+                      
+            first_column = None
+            second_column = None
+            
+            first_table = table_dict[joins[i-1]]
+            
+            '''Look through foreign keys of the second table'''
+            for fk in second_table.foreign_keys:
+                
+                '''If the key is both a primary key and from the first table'''
+                if fk.column.primary_key == True and fk.column.table == first_table:
+                    
+                    '''Assign the key found to the first table column'''
+                    first_column = fk.column
+                    
+                    '''Assign the associated foreign key in the second table to the second table column'''
+                    second_column = fk.parent
+                    
+            sqa_joins = sqa_joins.join(second_table, first_column == second_column)
         
     query = query.select_from(sqa_joins)
     
