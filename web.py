@@ -119,11 +119,11 @@ def get_query_data(query_id):
         else:
             raise Exception("That sample isn't available")       
 #run(db_type, loc, returned_columns, host = None, port = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):        
-        sql, data = run(db_type, full_name, desiredcols, \
-                        host = host, port = port, \
-                        username = username, password = password, \
-                        constraints=filters, \
-                        row_limit=row_count, \
+        sql, data = run(db_type, full_name, desiredcols,
+                        host = host, port = port,
+                        username = username, password = password,
+                        constraints=filters,
+                        row_limit=row_count,
                         distinct=dist)
         
         '''Guarantee all data is in string format'''

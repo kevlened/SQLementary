@@ -47,7 +47,7 @@ class MainMySQLTest(EngineTest):
         self.sample_id = 3
         
 class MainPostgresTest(EngineTest):
-    '''http://psycopg.lighthouseapp.com/projects/62710/tickets/31-importerror-dll-load-failed-the-specified-module-could-not-be-found'''
+    #http://psycopg.lighthouseapp.com/projects/62710/tickets/31-importerror-dll-load-failed-the-specified-module-could-not-be-found
     def setUp(self):
         self.db_type = 'postgres'
         self.host = 'localhost'
@@ -58,7 +58,7 @@ class MainPostgresTest(EngineTest):
         self.sample_id = 4
         
 class MainMSsqlTest(EngineTest):
-    '''https://groups.google.com/d/msg/sqlalchemy/K9wJReDp-gM/LDn5xKStvEcJ'''
+    #https://groups.google.com/d/msg/sqlalchemy/K9wJReDp-gM/LDn5xKStvEcJ
     def setUp(self):
         self.db_type = 'mssql'
         self.host = 'localhost'

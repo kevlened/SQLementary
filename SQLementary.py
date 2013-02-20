@@ -91,7 +91,7 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             operator = c[3]
             value1 = c[4]            
             
-            '''Sanitize val2'''
+            #Sanitize val2
             value2 = c[5] if len(c) == 6 else None
             value2 = None if value2 == '' else value2
             
@@ -108,13 +108,13 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     con_tabs_temp = set([con.table_name for con in elm_constraints])    
     tabs_temp = tabs_temp.union(con_tabs_temp)
     
-    '''Add the tables from the constraints to the validation'''
+    #Add the tables from the constraints to the validation
     col_tab_all = ret_cols[:]
     if len(elm_constraints) > 0:
         for con in elm_constraints:
             col_tab_all.append([con.table_name, con.column_name])
     
-    '''Validate the tables actually exist'''
+    #Validate the tables actually exist
     all_tables = set([t.name for t in sqa_tables])
     for tc in col_tab_all:
         ta  = str(tc[0])
@@ -130,20 +130,19 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             if not found:
                 raise Exception('Column ' + '%s.%s' % (ta,co) + ' doesn\'t exist in the current database') 
     
-    '''Find the optimal JOIN path'''
+    #Find the optimal JOIN path
     joins = join_sequence(list(sqa_tables), list(tabs_temp))    
     
-    '''Remove JOIN redundancy http://stackoverflow.com/a/480227'''   
+    #Remove JOIN redundancy http://stackoverflow.com/a/480227   
     seen = set()
     seen_add = seen.add
     new_joins =  [ x for x in joins if x not in seen and not seen_add(x)]
     joins = new_joins
     
-    '''Make it easy to find table data via a dictionary'''
+    #Make it easy to find table data via a dictionary
     table_dict = {tab.name:tab.data for tab in elm_tables}
     
-    '''Instantiate the query
-        -Needs to be the session.Query, not a simple select so we can add filters'''
+    #Instantiate the query -Needs to be the session.Query, not a simple select so we can add filters
     query = db.session.query()  
     
     def get_column(sqa_table,column_name):
@@ -151,9 +150,9 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             if ec.name == column_name:
                 return ec
             
-    '''Build the joins
-        -Needs to be performed before adding columns to prevent session.Query
-        from generating excess joins'''
+    #Build the joins
+    #    -Needs to be performed before adding columns to prevent session.Query
+    #    from generating excess joins
     query = query.select_from(table_dict[joins[0]])
     sqa_joins = table_dict[joins[0]]
     for i in range(1,len(joins)):
@@ -162,35 +161,35 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
             sqa_joins = sqa_joins.join(second_table)
             query = query.join(second_table)
         except AmbiguousForeignKeysError:
-            '''TODO: Assign a priority for primary keys from the order columns are requested'''
-                      
+            #TODO: Assign a priority for primary keys from the order columns are requested
+                                  
             first_column = None
             second_column = None
             
             first_table = table_dict[joins[i-1]]
             
-            '''Look through foreign keys of the second table'''
+            #Look through foreign keys of the second table
             for fk in second_table.foreign_keys:
                 
-                '''If the key is both a primary key and from the first table'''
-                if fk.column.primary_key == True and fk.column.table == first_table:
+                #If the key is both a primary key and from the first table
+                if fk.column.primary_key and fk.column.table == first_table:
                     
-                    '''Assign the key found to the first table column'''
+                    #Assign the key found to the first table column
                     first_column = fk.column
                     
-                    '''Assign the associated foreign key in the second table to the second table column'''
+                    #Assign the associated foreign key in the second table to the second table column
                     second_column = fk.parent
                     
             sqa_joins = sqa_joins.join(second_table, first_column == second_column)
             query = query.join(second_table, first_column == second_column)
             
-    '''Build the columns to select'''    
+    #Build the columns to select
     sqa_select_cols = []
             
-    '''Find columns that don't have an aggregate
-    Find columns that do have an aggregate
-    Create list of columns to select
-        -(must be done together to preserve order)'''
+    #Find columns that don't have an aggregate
+    #Find columns that do have an aggregate
+    #Create list of columns to select
+    #    -(must be done together to preserve order)
     sqa_non_aggregate = []
     sqa_aggregate = []
     for tc in returned_columns:
@@ -222,7 +221,7 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
         for na in sqa_non_aggregate:
             query = query.group_by(na)        
     
-    '''Add the constraints'''
+    #Add the constraints
     for ec in elm_constraints:
         if ec.operator == "=":
             query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) == ec.val1)
@@ -239,18 +238,18 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
         elif ec.operator == "between" or ec.operator == "btw":
             query = query.filter(between(get_column(table_dict[ec.table_name],ec.column_name), ec.val1, ec.val2))
         
-    '''Make rows distinct'''
+    #Make rows distinct
     if distinct:
         query = query.distinct()
     
-    '''Limit the number of returned rows'''
+    #Limit the number of returned rows
     if row_limit:
         query = query.limit(row_limit)
     
-    '''Execute the full statement'''                
+    #Execute the full statement                
     #db.engine._echo = True
     
-    '''TODO: fix the dialect hack'''
+    #TODO: fix the dialect hack
     dialect = select([get_column(table_dict[returned_columns[0][0]],returned_columns[0][1])]).bind.dialect
                              
     if commandline:
@@ -324,7 +323,7 @@ def compile_query_sqlite(query, dialect):
     for k,v in comp.params.iteritems():
         if isinstance(v, unicode):
             v = v.encode(enc)
-        '''split the key into field and count'''
+        #split the key into field and count
         fc = k.rsplit('_',1)
         f = fc[0]
         c = fc[1]
@@ -332,11 +331,11 @@ def compile_query_sqlite(query, dialect):
             params[f] = []
         params[f].append((c,v)) #add a tuple
         
-    '''replace each dictionary with a sorted list to use as a queue'''
+    #replace each dictionary with a sorted list to use as a queue
     for k,v in params.iteritems():
         params[k] = sorted(params[k], key=lambda k: k[0]) #sort by first val in tuple
         
-    '''loop through the encoded sql statement and replace the placeholders with values sequentially'''
+    #loop through the encoded sql statement and replace the placeholders with values sequentially
     encoded = comp.string.encode(enc)
     sequence = []
     index = 0
@@ -351,7 +350,7 @@ def compile_query_sqlite(query, dialect):
             param_dist[k] = index - found_at
         best = sorted(param_dist.iteritems(), key=operator.itemgetter(1))[0][0]
         sequence.append(params[best].pop(0)[1])
-        '''Remove empty params'''
+        #Remove empty params
         for k in params.keys():
             if len(params[k]) < 1:
                 params.pop(k)
@@ -400,19 +399,19 @@ def best_join(join_seq, adjacency_dict):
         
 def shortest_path(tableA, tableB, adjacency_dict):
     visited = set()
-    '''A set of all the tables you've visited so far'''
+    #A set of all the tables you've visited so far
     distance = {tableA:0}
-    '''The distances (in joins) for each node'''
+    #The distances (in joins) for each node
     joins_required = {tableA:[]}
     
     to_visit = set()
-    '''The current set of tables to visit'''
+    #The current set of tables to visit
     next_to_visit = set()
-    '''The set of tables to visit after the current set is complete'''
+    #The set of tables to visit after the current set is complete
     
     # first iteration
     for table_name in adjacency_dict[tableA]:
-        '''find the neighbors for each and make that the next round'''
+        #find the neighbors for each and make that the next round
         # the next tables take 1 join to get to
         distance[table_name] = 1
         # we start all joins with tableA
@@ -435,11 +434,11 @@ def shortest_path(tableA, tableB, adjacency_dict):
                     continue
                     
                 if tname in distance.keys():
-                    ''' If we have a distance recorded for a table'''
+                    # If we have a distance recorded for a table
                     if distance[tname] > distance[table_name] + 1:
-                        ''' and the recorded distance is greater than its possible distance'''
+                        # and the recorded distance is greater than its possible distance
                         distance[tname] = distance[table_name] + 1
-                        ''' replace the recorded distance with its new distance'''
+                        # replace the recorded distance with its new distance
                         joins_required[tname] = joins_required[table_name][:]
                         joins_required[tname].append(table_name)
                 else:
@@ -474,15 +473,15 @@ def main():
     if options.constraints:
         cons = [c.split(',') for c in options.constraints]
         
-    run(options.db_type,\
-        options.db_location,\
-        options.columns,\
-        schema = options.schema,\
-        username = options.username,\
-        password = options.password,\
-        constraints = cons,\
-        row_limit = options.row_limit,\
-        sql = options.sql,\
+    run(options.db_type,
+        options.db_location,
+        options.columns,
+        schema = options.schema,
+        username = options.username,
+        password = options.password,
+        constraints = cons,
+        row_limit = options.row_limit,
+        sql = options.sql,
         commandline = True)
     
 if __name__ == '__main__':
