@@ -1,13 +1,18 @@
-   
-from flask import Flask, request, redirect, session, render_template, url_for
-from jinja2 import Template
-import json
 import os
+import json
 
-from SQLementary import build_elm_schema, run, get_connection
 import sqlalchemy
+from jinja2 import Template
+from flask import Flask, request, redirect, session, render_template, url_for
+
+from config import Dev_Config
+from models import db, Database
+from SQLementary import build_elm_schema, run, get_connection
 
 app = Flask(__name__)
+app.config.from_object(Dev_Config)
+
+db.init_app(app)
 
 @app.route("/")
 def index():
@@ -140,6 +145,63 @@ def get_query_data(query_id):
         return "You must have a sample query number"
 
 if __name__ == "__main__":
+    # Create test context to set up db
+    ctx = app.test_request_context()
+    ctx.push()
+
+    # Create db tables
+    db.create_all()
+
+    # Create samples databases if they don't exist
+    if not Database.query.filter_by(db_type='sqlite').first():
+        db_type = 'sqlite'
+        full_name = 'static/sample_databases/Chinook_Sqlite.sqlite'
+        d = Database(db_type, full_name, alias = 'Chinook Sqlite')
+        db.session.add(d)
+        db.session.commit()
+    if not Database.query.filter_by(db_type='oracle').first():
+        db_type = 'oracle'
+        host = 'localhost'
+        port = '1521'
+        full_name = 'xe'
+        username = 'SYSTEM'
+        password = 'password'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        db.session.add(d)   
+        db.session.commit() 
+    if not Database.query.filter_by(db_type='mysql').first():
+        db_type = 'mysql'
+        host = 'localhost'
+        port = '3306'
+        full_name = 'sakila'
+        username = 'root'
+        password = 'password'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        db.session.add(d)   
+        db.session.commit()
+    if not Database.query.filter_by(db_type='postgres').first():
+        db_type = 'postgres'
+        host = 'localhost'
+        port = '5432'
+        full_name = 'pg_catalog'
+        username = 'postgres'
+        password = 'password'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        db.session.add(d)   
+        db.session.commit() 
+    if not Database.query.filter_by(db_type='mysql').first():
+        db_type = 'mssql'
+        host = 'localhost'
+        port = '1433'
+        full_name = 'master'
+        username = 'sa'
+        password = 'ASDqwe123'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        db.session.add(d)   
+        db.session.commit() 
+        
+    ctx.pop()    
+    
     # Start server    
     app.debug = False    
     app.run()
