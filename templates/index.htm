@@ -83,10 +83,14 @@
       <hr>
 
 <div class="centered-pills">
-	<select class="selectpicker">
+	<!--<select class="selectpicker">
 	    <option>Chinook SQLite</option>
-	    <!-- <option>NorthWind SQLite</option> -->
-	</select>
+	    <!-- <option>NorthWind SQLite</option>
+	</select> -->
+	
+	<select class="span2 selectpicker" ng-model="database" ng-options="key as value for (key, value) in databases">
+    	<option value="">Select Database</option>
+    </select>
 	
 	<div class="clear-fix"></div>
 		  

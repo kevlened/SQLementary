@@ -18,6 +18,19 @@ db.init_app(app)
 def index():
     return render_template('index.htm')
 
+@app.route("/databases")
+def get_databases():
+    databases = Database.query.all()
+    
+    db_list = {}
+    
+    for database in databases:
+        a = database.alias if database.alias else database.full_name
+        db_list[database.id] = a
+#    databases_dict = {}
+    response = json.dumps(db_list)
+    return response
+
 @app.route('/sample<int:query_id>/schema', methods=['GET', 'POST'])
 def get_schema(query_id):
     if query_id == 1:       
@@ -156,7 +169,8 @@ if __name__ == "__main__":
     if not Database.query.filter_by(db_type='sqlite').first():
         db_type = 'sqlite'
         full_name = 'static/sample_databases/Chinook_Sqlite.sqlite'
-        d = Database(db_type, full_name, alias = 'Chinook Sqlite')
+        alias = 'Chinook - Sqlite'
+        d = Database(db_type, full_name, alias = alias)
         db.session.add(d)
         db.session.commit()
     if not Database.query.filter_by(db_type='oracle').first():
@@ -166,7 +180,8 @@ if __name__ == "__main__":
         full_name = 'xe'
         username = 'SYSTEM'
         password = 'password'
-        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        alias = 'xe - Oracle'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password, alias = alias)
         db.session.add(d)   
         db.session.commit() 
     if not Database.query.filter_by(db_type='mysql').first():
@@ -176,7 +191,8 @@ if __name__ == "__main__":
         full_name = 'sakila'
         username = 'root'
         password = 'password'
-        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        alias = 'Sakila  - MySql'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password, alias = alias)
         db.session.add(d)   
         db.session.commit()
     if not Database.query.filter_by(db_type='postgres').first():
@@ -186,17 +202,19 @@ if __name__ == "__main__":
         full_name = 'pg_catalog'
         username = 'postgres'
         password = 'password'
-        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        alias = 'pg_catalog  - Postgres'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password, alias = alias)
         db.session.add(d)   
         db.session.commit() 
-    if not Database.query.filter_by(db_type='mysql').first():
+    if not Database.query.filter_by(db_type='mssql').first():
         db_type = 'mssql'
         host = 'localhost'
         port = '1433'
         full_name = 'master'
         username = 'sa'
         password = 'ASDqwe123'
-        d = Database(db_type, full_name,host = host, port = port, username = username, password = password)
+        alias = 'master  - MS SQL Server'
+        d = Database(db_type, full_name,host = host, port = port, username = username, password = password, alias = alias)
         db.session.add(d)   
         db.session.commit() 
         

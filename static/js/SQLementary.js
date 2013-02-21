@@ -12,6 +12,14 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     
     $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG'];
     
+    $http.get('/databases').success(function(data) {
+        //var dbs = data;
+        $scope.databases = data;
+        //for (var dbi in dbs){        	
+        //	$scope.databases.push(dbi);
+        //}
+    });
+    
     $http.get('/sample1/schema').success(function(data) {
         $scope.schema = data;
         $scope.typeOptions = [];

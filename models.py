@@ -57,7 +57,8 @@ class Database(db.Model):
 
     def __repr__(self):
         connection_string = str(URL(self.db_type, username = self.username, password = self.password, database = self.full_name))
-        a = self.alias if self.alias else '%s %s' % (self.full_name, self.db_type)
+        a = self.alias if self.alias else self.full_name
         
-        return connection_string + " as " + self.alias
+        return '<Database %s: %s>' % (a, self.id)
+        #return connection_string + " as " + self.alias
         #return '<Resume %s: %s>' % (self.user.email, self.title)
