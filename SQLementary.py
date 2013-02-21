@@ -10,23 +10,20 @@
 # License:     LGPL (http://www.gnu.org/licenses/lgpl-3.0.txt)
 #-------------------------------------------------------------------------------
 
-
-from elm_objects import elm_column, elm_constraint, elm_table
-import sqlsoup
-#from sqlalchemy import MetaData
-from sqlalchemy.sql import column, table, select, join, compiler, between
-#from sqlalchemy.orm import sessionmaker
-import logging
-from itertools import permutations
-import sqlparse
-import sys
-from optparse import OptionParser
-import operator
-from sqlalchemy.engine.url import URL
 import re
+import logging
+import operator
+from itertools import permutations
+from optparse import OptionParser
 
+import sqlparse
+import sqlsoup
 from sqlalchemy import func
 from sqlalchemy.exc import AmbiguousForeignKeysError
+from sqlalchemy.engine.url import URL
+from sqlalchemy.sql import column, table, select, join, compiler, between
+
+from elm_objects import elm_column, elm_constraint, elm_table
 
 logging.basicConfig(level=logging.CRITICAL)
 #logging.basicConfig(filename='db.log', level=logging.CRITICAL)
@@ -295,7 +292,6 @@ def compile_query_oracle(query, dialect):
     return statement
 
 def compile_query_mysql(query, dialect):
-    from sqlalchemy.sql import compiler
     from MySQLdb.converters import conversions, escape
 
     statement = query.statement
