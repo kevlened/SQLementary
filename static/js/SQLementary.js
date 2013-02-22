@@ -7,26 +7,30 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     $scope.results = '';
     $scope.sql = '';
     $scope.erd = '';    
-    $scope.rowcount = 10;  
+    $scope.rowcount = 10;
     $scope.distinct = true;
     
     $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG'];
     
     $http.get('/databases').success(function(data) {
-        //var dbs = data;
         $scope.databases = data;
-        //for (var dbi in dbs){        	
-        //	$scope.databases.push(dbi);
-        //}
     });
     
-    $http.get('/sample1/schema').success(function(data) {
-        $scope.schema = data;
-        $scope.typeOptions = [];
-        for (var tab in $scope.schema){        	
-        	$scope.typeOptions.push(tab);
-        }
-    });
+    $scope.updateSchema = function() {
+    	var id = $scope.database;
+    	$scope.schema = '';
+    	$scope.typeOptions = [];
+    	$scope.desiredcols = new Array();
+    	$scope.filters = new Array();
+    	
+	    $http.get('/' + id + '/schema').success(function(data) {
+	        $scope.schema = data;
+	        $scope.typeOptions = [];
+	        for (var tab in $scope.schema){        	
+	        	$scope.typeOptions.push(tab);
+	        }
+	    });
+    }
 
     $scope.addDesiredCol = function() {
         $scope.desiredcols.push({
@@ -82,7 +86,10 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
         	rowlimit: $scope.rowcount,
         	distinct: $scope.distinct        
         });
-        $http.post('/sample1/query', request).success(function(data) {
+        
+        var id = $scope.database;
+        
+        $http.post('/' + id + '/query', request).success(function(data) {
 	        $scope.sql = data['sql'];
 	        $scope.results = data['data'];
     	});

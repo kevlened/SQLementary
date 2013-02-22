@@ -31,47 +31,18 @@ def get_databases():
     response = json.dumps(db_list)
     return response
 
-@app.route('/sample<int:query_id>/schema', methods=['GET', 'POST'])
+@app.route('/<int:query_id>/schema', methods=['GET', 'POST'])
 def get_schema(query_id):
-    if query_id == 1:       
-        db_type = 'sqlite'
-        host = None
-        port = None
-        full_name = 'static/sample_databases/Chinook_Sqlite.sqlite'
-        username = None
-        password = None
-    elif query_id == 2:
-        db_type = 'oracle'
-        host = 'localhost'
-        port = '1521'
-        full_name = 'xe'
-        username = 'SYSTEM'
-        password = 'password'
-    elif query_id == 3:
-        db_type = 'mysql'
-        host = 'localhost'
-        port = '3306'
-        full_name = 'sakila'
-        username = 'root'
-        password = 'password'
-    elif query_id == 4:
-        db_type = 'postgres'
-        host = 'localhost'
-        port = '5432'
-        full_name = 'pg_catalog'
-        username = 'postgres'
-        password = 'password'
-    elif query_id == 5:
-        db_type = 'mssql'
-        host = 'localhost'
-        port = '1433'
-        full_name = 'master'
-        username = 'sa'
-        password = 'ASDqwe123'
-    else:
-        raise Exception("That sample isn't available")
-        
+    database = Database.query.filter_by(id=query_id).first()
+    db_type = database.db_type
+    full_name = database.full_name
+    host = database.host
+    port = database.port
+    username = database.username
+    password = database.password
+    
     db = get_connection(db_type, full_name, host = host, port = port, username = username, password = password)
+    
     schema = build_elm_schema(db)
     schema_dict = {}
     for tab in schema:
@@ -88,55 +59,23 @@ def get_schema(query_id):
     return schema_json
     
     
-@app.route('/sample<int:query_id>/query', methods=['GET', 'POST'])
+@app.route('/<int:query_id>/query', methods=['GET', 'POST'])
 def get_query_data(query_id):
-    if query_id:        
+    if query_id:
         data = request.json
-        #desiredcols = [col['table'] + '.' + col['column'] for col in data['desiredcolumns']]
         desiredcols = [[col['table'],col['column'],col['aggregate']] for col in data['desiredcolumns']]
-        #filters = [[fil['table'] + '.' + fil['column'], fil['operator'], fil['value1'], fil['value2']] for fil in data['filters']]
         filters = [(fil['table'],fil['column'], fil['aggregate'], fil['operator'], fil['value1'], fil['value2']) for fil in data['filters']]           
         row_count = data['rowlimit']
         dist = data['distinct'] == True
         
-        if query_id == 1:
-            db_type = 'sqlite'
-            host = None
-            port = None
-            full_name = 'static/sample_databases/Chinook_Sqlite.sqlite'
-            username = None
-            password = None
-        elif query_id == 2:
-            db_type = 'oracle'
-            host = 'localhost'
-            port = '1521'
-            full_name = 'xe'
-            username = 'SYSTEM'
-            password = 'password'
-        elif query_id == 3:
-            db_type = 'mysql'
-            host = 'localhost'
-            port = '3306'
-            full_name = 'sakila'
-            username = 'root'
-            password = 'password'
-        elif query_id == 4:
-            db_type = 'postgres'
-            host = 'localhost'
-            port = '5432'
-            full_name = 'pg_catalog'
-            username = 'postgres'
-            password = 'password'        
-        elif query_id == 5:
-            db_type = 'mssql'
-            host = 'localhost'
-            port = '1433'
-            full_name = 'master'
-            username = 'sa'
-            password = 'ASDqwe123'
-        else:
-            raise Exception("That sample isn't available")       
-#run(db_type, loc, returned_columns, host = None, port = None, username = None, password = None,  constraints = None, row_limit = None, sql = False, distinct = True, commandline = False):        
+        database = Database.query.filter_by(id=query_id).first()
+        db_type = database.db_type
+        full_name = database.full_name
+        host = database.host
+        port = database.port
+        username = database.username
+        password = database.password
+                
         sql, data = run(db_type, full_name, desiredcols,
                         host = host, port = port,
                         username = username, password = password,
@@ -155,7 +94,7 @@ def get_query_data(query_id):
         response = json.dumps({'sql': sql, 'data': data})
         return response
     else:
-        return "You must have a sample query number"
+        return "You must have a query id"
 
 if __name__ == "__main__":
     # Create test context to set up db

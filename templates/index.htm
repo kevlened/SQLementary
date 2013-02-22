@@ -88,7 +88,7 @@
 	    <!-- <option>NorthWind SQLite</option>
 	</select> -->
 	
-	<select class="span2 selectpicker" ng-model="database" ng-options="key as value for (key, value) in databases">
+	<select class="span2 selectpicker" ng-model="database" ng-options="key as value for (key, value) in databases" ng-change="updateSchema()">
     	<option value="">Select Database</option>
     </select>
 	
