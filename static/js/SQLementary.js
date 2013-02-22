@@ -1,6 +1,7 @@
+var myApp = angular.module('myApp', ['ui']);
+myApp.controller('QueryCtrl',function ($scope, $http) {
+	$scope.items = ["One", "Two", "Three"];
 
-var myApp = angular.module('myApp', []);
-myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     $scope.desiredcols = new Array();
     $scope.filters = new Array();
     $scope.limit = '';
@@ -37,7 +38,7 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
           table: '',
           column: '',
           aggregate: ''
-        });        
+        });     
         /*$('.selectpicker').selectpicker();*/
     };
     
@@ -48,7 +49,7 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
 	        desiredcols.splice(i, 1);
 	        break;
 	      }
-	    }
+	    }	     
     };
     
     $scope.addFilter = function() {
@@ -98,4 +99,4 @@ myApp.controller('QueryCtrl',['$scope', '$http', function ($scope, $http) {
     var transform = function(data){
         return $.param(data);
     };
-}]);
+});

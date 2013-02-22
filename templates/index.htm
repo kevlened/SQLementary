@@ -7,12 +7,16 @@
     <meta name="description" content="">
     <meta name="author" content="">    
     
+    
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    <script src="http://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.10.0/jquery-ui.min.js"></script>    
     <script src="http://ajax.googleapis.com/ajax/libs/angularjs/1.0.4/angular.min.js"></script>
 
     <!-- Le styles -->
 	<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">
     <link href="../static/css/SQLementary.css" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">
+	<!--<link href="http://code.jquery.com/ui/1.10.1/themes/base/jquery-ui.css" rel="stylesheet">-->
 	
     <style type="text/css">
       body {
@@ -100,12 +104,13 @@
 	</ul> 
 </div>
 	
+	
 	<div class="tab-content">
 	  <div class="tab-pane active" id="builder">
 	  	<div id = "returned-cols">
 	  		<h4>Returned Columns</h4>
-	  		<ul class="column unstyled"  ng-repeat="col in desiredcols">
-	  		<li>
+	  		<ul class="unstyled" ng-model="desiredcols" ui-sortable="{update: update, remove: remove, axis: 'y'}">
+	  		<li class="alert alert-info" ng-repeat="col in desiredcols">
 	  			<a ng-click="removeColumn(col)"><i class="icon-remove"></i></a>
 	  			<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
 		          <option value="">Aggregate</option>
@@ -121,12 +126,13 @@
 			</li>
 			</ul>
 			<button class="btn btn-small btn-inverse" type="button" ng-click="addDesiredCol()">Add Column</button>
+			<!--<pre>Desired Columns: {{'{{desiredcols}}'}}</pre>-->
 	  	</div>
 	  	<br />
 	  	<div id = "filters">
 	  		<h4>Filters</h4>
-	  		<ul class="filter unstyled" ng-repeat="fil in filters">
-		  	<li>
+	  		<ul class="unstyled" ng-model="filters" ui-sortable="{update: update, remove: remove, axis: 'y'}">
+		  	<li class="alert alert-info" ng-repeat="fil in filters">
 		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
 		  		<!--
 		  		<select class="span1" ng-model="fil.aggregate" ng-options="option for option in aggOptions">
@@ -240,19 +246,27 @@
     <!-- Le javascript
     ================================================== -->
     <!-- Placed at the end of the document so the pages load faster -->
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.0/jquery.min.js"></script>
+    
+    <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+	<script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js"></script>-->
+	
 	<script src="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/js/bootstrap.min.js"></script>
 	<script src="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/jquery.dataTables.min.js"></script>
     <script src="http://cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script>
+    
+	<script src="../static/js/angular-ui.js"></script>
+	<!--<script src="http://angular-ui.github.com/angular-ui/build/angular-ui.js"></script>-->
+    <script src="../static/js/SQLementary.js"></script>
     <script>
   $(document).ready(function() {
     $('#myTab a:first').tab('show');
+    
     $('#table_id').dataTable(
     	{"sScrollY": "200px",
 		"sDom": "frtiS",
 		"bDeferRender": true});
   })
 </script>
-    <script src="../static/js/SQLementary.js"></script>
+	
   </body>
 </html>
