@@ -56,7 +56,7 @@
       }
     </style>	
 	<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-responsive.min.css" rel="stylesheet">
-
+	
 	<!--[if lte IE 8]>
 	    <script>
 	    window.myCustomTags = ['ui-sortable']; // optional
@@ -114,9 +114,10 @@
 	
 	<div class="tab-content">
 	  <div class="tab-pane active" id="builder">
+	  
 	  	<div id = "returned-cols">
 	  		<h4>Returned Columns</h4>
-	  		<ul class="unstyled" ng-model="desiredcols" ui-sortable="{update: update, remove: remove, axis: 'y'}">
+	  		<ul class="unstyled" ng-model="desiredcols" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
 	  		<li class="alert alert-info" ng-repeat="col in desiredcols">
 	  			<a ng-click="removeColumn(col)"><i class="icon-remove"></i></a>
 	  			<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
@@ -130,6 +131,7 @@
 		          <option value="">Select Column</option>
 		        </select>
 				</ng-switch>
+				<span class="pull-right handle"><i class="icon-align-justify"></i></span>
 			</li>
 			</ul>
 			<button class="btn btn-small btn-inverse" type="button" ng-click="addDesiredCol()">Add Column</button>
@@ -138,7 +140,7 @@
 	  	<br />
 	  	<div id = "filters">
 	  		<h4>Filters</h4>
-	  		<ul class="unstyled" ng-model="filters" ui-sortable="{update: update, remove: remove, axis: 'y'}">
+	  		<ul class="unstyled" ng-model="filters" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
 		  	<li class="alert alert-info" ng-repeat="fil in filters">
 		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
 		  		<!--
@@ -193,6 +195,7 @@
 					</span>
 				</ng-switch>				
 				</span>
+				<span class="pull-right handle"><i class="icon-align-justify"></i></span>
 			</li>
 			</ul>
 			<button class="btn btn-small btn-inverse" type="button" ng-click="addFilter()">Add Filter</button>
