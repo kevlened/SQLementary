@@ -118,7 +118,7 @@
 	  	<div id = "returned-cols">
 	  		<h4>Returned Columns</h4>
 	  		<ul class="unstyled" ng-model="desiredcols" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
-	  		<li class="alert alert-info" ng-repeat="col in desiredcols">
+	  		<li class="alert alert-info" ng-repeat="col in desiredcols" ng-click="changeSelection(col)" ng-class="{selected : col.selected}">
 	  			<a ng-click="removeColumn(col)"><i class="icon-remove"></i></a>
 	  			<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
 		          <option value="">Aggregate</option>

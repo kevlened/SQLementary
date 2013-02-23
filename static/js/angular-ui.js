@@ -1078,121 +1078,6 @@ angular.module('ui.directives').directive('uiShow', [function () {
   };
 }]);
 
-/*
- jQuery UI Sortable plugin wrapper
-
- @param [ui-sortable] {object} Options to pass to $.fn.sortable() merged onto ui.config
-*/
-angular.module('ui.directives').directive('uiSortable', [
-  'ui.config', function(uiConfig) {
-    return {
-      require: '?ngModel',
-      link: function(scope, element, attrs, ngModel) {
-        var onReceive, onRemove, onStart, onUpdate, opts;
-
-        opts = angular.extend({}, uiConfig.sortable, scope.$eval(attrs.uiSortable));
-
-        if (ngModel) {
-
-          ngModel.$render = function() {
-            element.sortable( "refresh" );
-          };
-
-          onStart = function(e, ui) {
-            // Save position of dragged item
-            ui.item.sortable = { index: ui.item.index() };
-          };
-
-          onUpdate = function(e, ui) {
-            // For some reason the reference to ngModel in stop() is wrong
-            ui.item.sortable.resort = ngModel;
-          };
-
-          onReceive = function(e, ui) {
-            ui.item.sortable.relocate = true;
-            // added item to array into correct position and set up flag
-            ngModel.$modelValue.splice(ui.item.index(), 0, ui.item.sortable.moved);
-          };
-
-          onRemove = function(e, ui) {
-            // copy data into item
-            if (ngModel.$modelValue.length === 1) {
-              ui.item.sortable.moved = ngModel.$modelValue.splice(0, 1)[0];
-            } else {
-              ui.item.sortable.moved =  ngModel.$modelValue.splice(ui.item.sortable.index, 1)[0];
-            }
-          };
-
-          onStop = function(e, ui) {
-            // digest all prepared changes
-            if (ui.item.sortable.resort && !ui.item.sortable.relocate) {
-
-              // Fetch saved and current position of dropped element
-              var end, start;
-              start = ui.item.sortable.index;
-              end = ui.item.index();
-
-              // Reorder array and apply change to scope
-              ui.item.sortable.resort.$modelValue.splice(end, 0, ui.item.sortable.resort.$modelValue.splice(start, 1)[0]);
-
-            }
-            if (ui.item.sortable.resort || ui.item.sortable.relocate) {
-              scope.$apply();
-            }
-          };
-
-          // If user provided 'start' callback compose it with onStart function
-          opts.start = (function(_start){
-            return function(e, ui) {
-              onStart(e, ui);
-              if (typeof _start === "function")
-                _start(e, ui);
-            }
-          })(opts.start);
-
-          // If user provided 'start' callback compose it with onStart function
-          opts.stop = (function(_stop){
-            return function(e, ui) {
-              onStop(e, ui);
-              if (typeof _stop === "function")
-                _stop(e, ui);
-            }
-          })(opts.stop);
-
-          // If user provided 'update' callback compose it with onUpdate function
-          opts.update = (function(_update){
-            return function(e, ui) {
-              onUpdate(e, ui);
-              if (typeof _update === "function")
-                _update(e, ui);
-            }
-          })(opts.update);
-
-          // If user provided 'receive' callback compose it with onReceive function
-          opts.receive = (function(_receive){
-            return function(e, ui) {
-              onReceive(e, ui);
-              if (typeof _receive === "function")
-                _receive(e, ui);
-            }
-          })(opts.receive);
-
-          // If user provided 'remove' callback compose it with onRemove function
-          opts.remove = (function(_remove){
-            return function(e, ui) {
-              onRemove(e, ui);
-              if (typeof _remove === "function")
-                _remove(e, ui);
-            };
-          })(opts.remove);
-        }
-
-        // Create sortable
-        element.sortable(opts);
-      }
-    };
-  }
-]);
 
 /**
  * Binds a TinyMCE widget to <textarea> elements.
@@ -1462,3 +1347,181 @@ angular.module('ui.filters').filter('unique', function () {
     return items;
   };
 });
+
+
+/*
+ jQuery UI Sortable plugin wrapper
+
+ @param [ui-sortable] {object} Options to pass to $.fn.sortable() merged onto ui.config
+*/
+angular.module('ui.directives').directive('uiSortable', [
+  'ui.config', function(uiConfig) {
+    return {
+      require: '?ngModel',
+      link: function(scope, element, attrs, ngModel) {
+        var onReceive, onRemove, onStart, onUpdate, opts;
+
+        opts = angular.extend({}, uiConfig.sortable, scope.$eval(attrs.uiSortable));
+
+        if (ngModel) {
+
+          ngModel.$render = function() {
+            element.sortable( "refresh" );
+          };
+
+          onStart = function(e, ui) {
+            // Save position of dragged item
+            ui.item.sortable = { index: ui.item.index() };
+          };
+
+          onUpdate = function(e, ui) {
+            // For some reason the reference to ngModel in stop() is wrong
+            ui.item.sortable.resort = ngModel;
+          };
+
+          onReceive = function(e, ui) {
+            ui.item.sortable.relocate = true;
+            // added item to array into correct position and set up flag
+            ngModel.$modelValue.splice(ui.item.index(), 0, ui.item.sortable.moved);
+          };
+
+          onRemove = function(e, ui) {
+            // copy data into item
+            if (ngModel.$modelValue.length === 1) {
+              ui.item.sortable.moved = ngModel.$modelValue.splice(0, 1)[0];
+            } else {
+              ui.item.sortable.moved =  ngModel.$modelValue.splice(ui.item.sortable.index, 1)[0];
+            }
+          };
+
+          onStop = function(e, ui) {
+            // digest all prepared changes
+            if (ui.item.sortable.resort && !ui.item.sortable.relocate) {
+
+              // Fetch saved and current position of dropped element
+              var end, start;
+              start = ui.item.sortable.index;
+              end = ui.item.index();
+
+              // Reorder array and apply change to scope
+              ui.item.sortable.resort.$modelValue.splice(end, 0, ui.item.sortable.resort.$modelValue.splice(start, 1)[0]);
+
+            }
+            if (ui.item.sortable.resort || ui.item.sortable.relocate) {
+              scope.$apply();
+            }
+          };
+
+          // If user provided 'start' callback compose it with onStart function
+          opts.start = (function(_start){
+            return function(e, ui) {
+              onStart(e, ui);
+              if (typeof _start === "function")
+                _start(e, ui);
+            }
+          })(opts.start);
+
+          // If user provided 'start' callback compose it with onStart function
+          opts.stop = (function(_stop){
+            return function(e, ui) {
+              onStop(e, ui);
+              if (typeof _stop === "function")
+                _stop(e, ui);
+            }
+          })(opts.stop);
+
+          // If user provided 'update' callback compose it with onUpdate function
+          opts.update = (function(_update){
+            return function(e, ui) {
+              onUpdate(e, ui);
+              if (typeof _update === "function")
+                _update(e, ui);
+            }
+          })(opts.update);
+
+          // If user provided 'receive' callback compose it with onReceive function
+          opts.receive = (function(_receive){
+            return function(e, ui) {
+              onReceive(e, ui);
+              if (typeof _receive === "function")
+                _receive(e, ui);
+            }
+          })(opts.receive);
+
+          // If user provided 'remove' callback compose it with onRemove function
+          opts.remove = (function(_remove){
+            return function(e, ui) {
+              onRemove(e, ui);
+              if (typeof _remove === "function")
+                _remove(e, ui);
+            };
+          })(opts.remove);
+        }
+
+        // Create sortable
+        element.sortable(opts);
+      }
+    };
+  }
+]);
+
+
+/*
+ jQuery UI Selectable plugin wrapper
+
+ @param [ui-selectable] {object} Options to pass to $.fn.selectable() merged onto ui.config
+*/
+angular.module('ui.directives').directive('uiSelectable', [
+  'ui.config', function(uiConfig) {
+    return {
+      require: '?ngModel',
+      link: function(scope, element, attrs, ngModel) {
+        var onSelected, onUnselected, opts;
+
+        opts = angular.extend({}, uiConfig.selectable, scope.$eval(attrs.uiSelectable));
+
+        if (ngModel) {
+
+          ngModel.$render = function() {
+            element.selectable( "refresh" );
+          };
+          
+          onSelected = function(e,ui) {
+          	// Change item at specified index
+          	//var index = ui.item.index();
+          	s = scope.col;
+          	els = element.children;
+          	var val = ngModel.$modelValue;
+          	alert('selected');
+          };
+          
+          onUnselected = function(e,ui){
+          	// Change item at specified index
+          	alert('unselected');
+          };
+          
+          // If user provided 'selected' callback compose it with onStart function
+          opts.selected = (function(_selected){
+            return function(e, ui) {
+              onSelected(e, ui);
+              if (typeof _start === "function")
+                _selected(e, ui);
+            }
+          })(opts.selected);
+
+          // If user provided 'selected' callback compose it with onStart function
+          opts.unselected = (function(_unselected){
+            return function(e, ui) {
+              onUnselected(e, ui);
+              if (typeof _start === "function")
+                _unselected(e, ui);
+            }
+          })(opts.unselected);
+        }
+
+        // Create selectable
+        element.selectable(opts);
+      }
+    };
+  }
+]);

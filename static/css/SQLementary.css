@@ -20,3 +20,6 @@
     margin: 5px;
     cursor: move;
 }
+
+.ui-selecting { background: #FECA40; }
+.selected { background: #F39814; color: white; }

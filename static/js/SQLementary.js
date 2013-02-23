@@ -17,6 +17,10 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
         $scope.databases = data;
     });
     
+    $scope.changeSelection = function(o) {
+    	o.selected = !o.selected;
+    }
+    
     $scope.updateSchema = function() {
     	var id = $scope.database;
     	$scope.schema = '';
