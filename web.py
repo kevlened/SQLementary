@@ -90,8 +90,15 @@ def get_query_data(query_id):
             for item in tpl:
                 tuple_string.append(str(item))
             data[t] = tuple(tuple_string)
-                    
-        response = json.dumps({'sql': sql, 'data': data})
+        
+        encoded_data = []
+        for d in data:
+            dlist = []
+            for item in d:
+                dlist.append(item.encode('utf-8'))
+            encoded_data.append(tuple(dlist))
+                                  
+        response = json.dumps({'sql': sql, 'data': encoded_data})
         return response
     else:
         return "You must have a query id"
