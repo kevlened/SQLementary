@@ -11,7 +11,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     $scope.rowcount = 10;
     $scope.distinct = true;
     
-    $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG'];
+    $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG', 'Clear'];
     
     $http.get('/databases').success(function(data) {
         $scope.databases = data;
@@ -20,6 +20,31 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     $scope.changeSelection = function(o) {
     	o.selected = !o.selected;
     }
+    
+    $scope.toolClicked = function(tool) {
+    	var cs = $scope.desiredcols;
+    	/*for ( var i = 0; i < cs.length; i++) {
+	      desiredcols[i].aggregate=tool;
+	    }*/	
+		for ( var i = 0; i < cs.length; i++) {
+			var sel = cs[i].selected;
+	      if (sel === true) {
+	      	if (tool === 'Clear') {
+	      		//delete(cs[i].aggregate);
+	      		cs[i].aggregate ='';
+	      	}
+	      	else {
+	        	cs[i].aggregate=tool;
+	        }
+	      }
+	    }  	
+    }
+    
+    /*$scope.selectedCols = function() {
+        return _.where($scope.desiredcols, {
+            selected: true
+        });
+    }*/
     
     $scope.updateSchema = function() {
     	var id = $scope.database;

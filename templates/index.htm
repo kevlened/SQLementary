@@ -110,30 +110,30 @@
 	  <li><a href="#erdviewer" data-toggle="pill">ERD Viewer</a></li>
 	</ul>
 	
-	<div class="clear-fix"></div>
-	<br></br>
-	
-	<h5>Tools</h5>
-	  <ul class="nav nav-pills" id="myTab">
-	  		
-  		<li ng-repeat="agg in aggOptions">
-  			<a>{{'{{agg}}'}}</a>	
-  		</li>
-	</ul>
 </div>
 	
 	
 	<div class="tab-content">
 	  <div class="tab-pane active" id="builder">
+	  	<div class="centered-pills">
+	  	<h5>Tools</h5>
+	  <ul class="nav nav-pills" id="myTab">
+	  		
+  		<li ng-repeat="agg in aggOptions">
+  			<a ng-click="toolClicked(agg)">{{'{{agg}}'}}</a>	
+  		</li>
+	</ul>
+	</div>
 	  
 	  	<div id = "returned-cols">
 	  		<h4>Returned Columns</h4>
 	  		<ul class="unstyled" ng-model="desiredcols" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
 	  		<li class="alert alert-info" ng-repeat="col in desiredcols" ng-click="changeSelection(col)" ng-class="{selected : col.selected}">
 	  			<a ng-click="removeColumn(col)"><i class="icon-remove"></i></a>
-	  			<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
+	  			<!--<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
 		          <option value="">Aggregate</option>
-		        </select>
+		        </select>-->
+		        {{'{{col.aggregate}}'}}
 				<select class="span2" ng-model="col.table" ng-options="option for option in typeOptions">
 		          <option value="">Select Table</option>
 		        </select>
