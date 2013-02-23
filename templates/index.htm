@@ -108,7 +108,18 @@
 	<ul class="nav nav-pills" id="myTab">
 	  <li><a href="#builder" data-toggle="pill">Builder</a></li>
 	  <li><a href="#erdviewer" data-toggle="pill">ERD Viewer</a></li>
-	</ul> 
+	</ul>
+	
+	<div class="clear-fix"></div>
+	<br></br>
+	
+	<h5>Tools</h5>
+	  <ul class="nav nav-pills" id="myTab">
+	  		
+  		<li ng-repeat="agg in aggOptions">
+  			<a>{{'{{agg}}'}}</a>	
+  		</li>
+	</ul>
 </div>
 	
 	
