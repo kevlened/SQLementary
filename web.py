@@ -91,12 +91,8 @@ def get_query_data(query_id):
                 tuple_string.append(str(item))
             data[t] = tuple(tuple_string)
         
-        encoded_data = []
-        for d in data:
-            dlist = []
-            for item in d:
-                dlist.append(item.encode('utf-8'))
-            encoded_data.append(tuple(dlist))
+        '''Convert all the strings to utf-8'''       
+        encoded_data = [tuple([datem.encode('utf-8') for datem in tpl]) for tpl in data]
                                   
         response = json.dumps({'sql': sql, 'data': encoded_data})
         return response
