@@ -88,13 +88,12 @@ def get_query_data(query_id):
             tpl = data[t]
             tuple_string = []
             for item in tpl:
-                tuple_string.append(str(item))
+                '''Convert all the strings to utf-8''' 
+                s = str(item)
+                tuple_string.append(s.encode('utf-8'))
             data[t] = tuple(tuple_string)
-        
-        '''Convert all the strings to utf-8'''       
-        encoded_data = [tuple([datem.encode('utf-8') for datem in tpl]) for tpl in data]
                                   
-        response = json.dumps({'sql': sql, 'data': encoded_data})
+        response = json.dumps({'sql': sql, 'data': data})
         return response
     else:
         return "You must have a query id"
