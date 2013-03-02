@@ -16,6 +16,7 @@
 	<!--<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.2.2/css/bootstrap-combined.min.css" rel="stylesheet">-->
 	<link href="../static/css/bootstrap.min.css" rel="stylesheet">
     <link href="../static/css/SQLementary.css" rel="stylesheet">
+    <link href="http://cdn.jsdelivr.net/select2/3.3/select2.css" rel="stylesheet">
 	<link rel="stylesheet" type="text/css" href="http://ajax.aspnetcdn.com/ajax/jquery.dataTables/1.9.4/css/jquery.dataTables.css">
 	<!--<link href="http://code.jquery.com/ui/1.10.1/themes/base/jquery-ui.css" rel="stylesheet">-->
 	
@@ -96,14 +97,13 @@
       <hr>
 
 <div class="centered-pills">
-	<!--<select class="selectpicker">
-	    <option>Chinook SQLite</option>
-	    <!-- <option>NorthWind SQLite</option>
-	</select> -->
-	
-	<select class="span2 selectpicker" ng-model="database" ng-options="key as value for (key, value) in databases" ng-change="updateSchema()">
-    	<option value="">Select Database</option>
+	    
+    <select ui-select2="{minimumResultsForSearch:25}" data-placeholder="Select Database" ng-model="database" ng-change="updateSchema()">
+    	<option></option>
+    	<option ng-repeat="(key, value) in databases" value={{'{{key}}'}}>{{'{{value}}'}}</option>
     </select>
+    
+    <br></br>
 	
 	<div class="clear-fix"></div>
 		  
@@ -132,17 +132,24 @@
 	  		<ul class="unstyled" ng-model="desiredcols" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
 	  		<li class="alert alert-info" ng-repeat="col in desiredcols" ng-click="changeSelection(col)" ng-class="{selected : col.selected}">
 	  			<a ng-click="removeColumn(col)"><i class="icon-remove"></i></a>
-	  			<!--<select class="span1" ng-model="col.aggregate" ng-options="option for option in aggOptions">
-		          <option value="">Aggregate</option>
-		        </select>-->
+	  			
 		        {{'{{col.aggregate}}'}}
+		        
+		        <!--
 				<select class="span2" ng-model="col.table" ng-options="option for option in typeOptions">
 		          <option value="">Select Table</option>
-		        </select>
+		        </select>-->
+		        
+		        <select ui-select2="{minimumResultsForSearch:25}" data-placeholder="Select Table" ng-model="col.table" ng-click="$event.stopPropagation()">
+			    	<option></option>
+			    	<option ng-repeat="option in typeOptions" value={{'{{option}}'}}>{{'{{option}}'}}</option>
+			    </select>
+		        
 			    <ng-switch on="!!col.table">
-			    <select class="span2" ng-model="col.column" ng-options="key as key for (key, value) in schema[col.table]" ng-switch-when="true">
-		          <option value="">Select Column</option>
-		        </select>
+		        <select ui-select2="{minimumResultsForSearch:25}" data-placeholder="Select Column" ng-model="col.column" ng-switch-when="true" ng-click="$event.stopPropagation()">
+			    	<option></option>
+			    	<option ng-repeat="(key, value) in schema[col.table]" value={{'{{key}}'}}>{{'{{key}}'}}</option>
+			    </select>
 				</ng-switch>
 				<span class="pull-right handle"><i class="icon-align-justify"></i></span>
 			</li>
@@ -156,23 +163,21 @@
 	  		<ul class="unstyled" ng-model="filters" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
 		  	<li class="alert alert-info" ng-repeat="fil in filters">
 		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
-		  		<!--
-		  		<select class="span1" ng-model="fil.aggregate" ng-options="option for option in aggOptions">
-		          <option value="">Aggregate</option>
-		        </select>-->
-		        
-		  		<select name='table' class="span2" ng-model="fil.table" ng-options="option for option in typeOptions">
-		          <option value="">Select Table</option>
-		        </select>
+		  		
+		        <select ui-select2="{minimumResultsForSearch:25}" data-placeholder="Select Table" ng-model="fil.table" ng-click="$event.stopPropagation()">
+			    	<option></option>
+			    	<option ng-repeat="option in typeOptions" value={{'{{option}}'}}>{{'{{option}}'}}</option>
+			    </select>
 		        
 			    <ng-switch on="!!fil.table">
-			    <select name='column' class="span2" ng-model="fil.column" ng-options="key as key for (key, value) in schema[fil.table]" ng-switch-when="true">
-		          <option value="">Select Column</option>
-		        </select>						
+		        <select ui-select2="{minimumResultsForSearch:25}" data-placeholder="Select Column" ng-model="fil.column" ng-switch-when="true" ng-click="$event.stopPropagation()">
+			    	<option></option>
+			    	<option ng-repeat="(key, value) in schema[fil.table]" value={{'{{key}}'}}>{{'{{key}}'}}</option>
+			    </select>						
 		        </ng-switch>
 		        <ng-switch on="!!fil.table && !!fil.column">
 		        <span ng-switch-when="true">
-					<select class="selectpicker span1" ng-model="fil.operator">
+					<select ui-select2="{minimumResultsForSearch:25}" ng-model="fil.operator" ng-click="$event.stopPropagation()">
 						<option>&#061;</option>	
 						<option>&#060;</option>				
 						<option>&#060;&#061;</option>
@@ -275,6 +280,7 @@
     <script src="http://cdnjs.cloudflare.com/ajax/libs/json3/3.2.4/json3.min.js"></script>
     
 	<script src="../static/js/angular-ui.js"></script>
+	<script src="http://cdnjs.cloudflare.com/ajax/libs/select2/3.3.0/select2.min.js"></script>
     <script src="../static/js/SQLementary.js"></script>
     <script>
   $(document).ready(function() {
