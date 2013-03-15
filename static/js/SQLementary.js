@@ -13,6 +13,20 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     
     $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG', 'Clear'];
     
+    $scope.operators = [
+    	{id: '=', text: '='}, 
+		{id: '<', text: '<'}, 
+		{id: '<=', text: '<='}, 
+		{id: '>', text: '>'}, 
+		{id: '>=', text: '>='},
+		{id: '<>', text: '<>'}, 
+		{id: 'between', text: 'Btw'}
+    ];
+    
+    $scope.select2Options = {
+    	minimumResultsForSearch:25
+	  };
+    
     $http.get('/databases').success(function(data) {
         $scope.databases = data;
     });
@@ -23,14 +37,10 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     
     $scope.toolClicked = function(tool) {
     	var cs = $scope.desiredcols;
-    	/*for ( var i = 0; i < cs.length; i++) {
-	      desiredcols[i].aggregate=tool;
-	    }*/	
 		for ( var i = 0; i < cs.length; i++) {
 			var sel = cs[i].selected;
 	      if (sel === true) {
 	      	if (tool === 'Clear') {
-	      		//delete(cs[i].aggregate);
 	      		cs[i].aggregate ='';
 	      	}
 	      	else {
@@ -39,12 +49,6 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
 	      }
 	    }  	
     }
-    
-    /*$scope.selectedCols = function() {
-        return _.where($scope.desiredcols, {
-            selected: true
-        });
-    }*/
     
     $scope.updateSchema = function() {
     	var id = $scope.database;
@@ -67,8 +71,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
           table: '',
           column: '',
           aggregate: ''
-        });     
-        /*$('.selectpicker').selectpicker();*/
+        });
     };
     
     $scope.removeColumn = function( col ) {
@@ -90,7 +93,6 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
           value2: '',
           aggregate: ''
         }); 
-        /*$('.selectpicker').selectpicker();*/
     };
     
     $scope.removeFilter = function( fil ) {
@@ -123,9 +125,5 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
 	        $scope.sql = data['sql'];
 	        $scope.results = data['data'];
     	});
-    };
-    
-    var transform = function(data){
-        return $.param(data);
     };
 });
