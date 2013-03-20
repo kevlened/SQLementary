@@ -1,11 +1,11 @@
-function DesiredColumn {
+function DesiredColumn() {
 	this.table = '';
 	this.column = '';
 	this.aggregate = '';
 	this.selected = '';
 }
 
-function Filter {
+function Filter() {
 	table: '';
 	column: '';
 	operator: '';
