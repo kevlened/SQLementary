@@ -1,3 +1,19 @@
+function DesiredColumn {
+	this.table = '';
+	this.column = '';
+	this.aggregate = '';
+	this.selected = '';
+}
+
+function Filter {
+	table: '';
+	column: '';
+	operator: '';
+	value1: '';
+	value2: '';
+	aggregate: '';
+}
+
 var myApp = angular.module('myApp', ['ui']);
 myApp.controller('QueryCtrl',function ($scope, $http) {
 	$scope.items = ["One", "Two", "Three"];
@@ -67,11 +83,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     }
 
     $scope.addDesiredCol = function() {
-        $scope.desiredcols.push({
-          table: '',
-          column: '',
-          aggregate: ''
-        });
+        $scope.desiredcols.push(new DesiredColumn());
     };
     
     $scope.removeColumn = function( col ) {
@@ -85,14 +97,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     };
     
     $scope.addFilter = function() {
-        $scope.filters.push({
-          table: '',
-          column: '',
-          operator: '',
-          value1: '',
-          value2: '',
-          aggregate: ''
-        }); 
+        $scope.filters.push(new Filter()); 
     };
     
     $scope.removeFilter = function( fil ) {
