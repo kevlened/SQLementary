@@ -5,13 +5,22 @@ function DesiredColumn() {
 	this.selected = '';
 }
 
-function Filter() {
-	table: '';
-	column: '';
-	operator: '';
-	value1: '';
-	value2: '';
-	aggregate: '';
+function Filter(filterType) {
+	this.type = filterType;
+	this.boolType = '';
+	this.filters = [];
+	this.table = '';
+	this.column = '';
+	this.operator = '';
+	this.value1 = '';
+	this.value2 = '';
+	this.aggregate = '';
+}
+
+function FilterList(type) {
+	this.boolType = type;
+	this.filters = [];
+	this.selected = '';
 }
 
 var myApp = angular.module('myApp', ['ui']);
@@ -28,6 +37,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     $scope.distinct = true;
     
     $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG', 'Clear'];
+    $scope.filOptions = ['AND'];
     
     $scope.operators = [
     	{id: '=', text: '='}, 
@@ -66,6 +76,39 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
 	    }  	
     }
     
+    $scope.filterOptionClicked = function(filterOption) {
+    	var fils = $scope.filters;
+    	var firstSelected = -1;
+    	var filsToCombine = [];
+		for ( var i = 0; i < fils.length; i++) {
+			var fil = fils[i];
+			var sel = fil.selected;
+			if (sel === true) { 
+		      	/*Identify where the final result will be in the filters list*/
+		      	if (firstSelected < 0) {
+		      		firstSelected = i;
+		      	}
+		      	/*Start combining all the filters that are selected into a list*/
+		      	filsToCombine.push(fil);
+	      	}
+		}
+		
+		/*Remove all but the first from the list*/
+		for ( var i = 1; i < filsToCombine.length; i++) {
+			$scope.removeFilter(filsToCombine[i]);						
+	    }
+	    
+      	/*If the list is greater than 1, then create an AndFilter*/
+      	if (filsToCombine.length > 1) {
+  			af = new Filter('MANY');
+  			af.boolType = filterOption;
+  			for ( var i = 0; i < filsToCombine.length; i++) {
+				af.filters.push(filsToCombine[i]);						
+		    }
+		    $scope.filters[firstSelected] = af;
+      	} 	
+    }
+    
     $scope.updateSchema = function() {
     	var id = $scope.database;
     	$scope.schema = '';
@@ -97,7 +140,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     };
     
     $scope.addFilter = function() {
-        $scope.filters.push(new Filter()); 
+        $scope.filters.push(new Filter('ONE')); 
     };
     
     $scope.removeFilter = function( fil ) {

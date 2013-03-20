@@ -160,56 +160,89 @@
 	  	</div>
 	  	<br />
 	  	<div id = "filters">
+	  		<div class="centered-pills">
+			  	<h5>Filter Options</h5>
+			  <ul class="nav nav-pills" id="myTab">
+			  	
+		  		<li ng-repeat="filOpt in filOptions">
+		  			<a ng-click="filterOptionClicked(filOpt)">{{'{{filOpt}}'}}</a>	
+		  		</li>
+			</ul>
+			</div>
+			
 	  		<h4>Filters</h4>
 	  		<ul class="unstyled" ng-model="filters" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
-		  	<li class="alert alert-info" ng-repeat="fil in filters" ng-click="changeSelection(fil)" ng-class="{selected : fil.selected}">
-		  		<a ng-click="removeFilter(fil)"><i class="icon-remove"></i></a>
-		  		
-		        <select ui-select2="select2Options" data-placeholder="Select Table" ng-model="fil.table" ng-click="$event.stopPropagation()" style="width:150px">
-			    	<option></option>
-			    	<option ng-repeat="option in typeOptions" value={{'{{option}}'}}>{{'{{option}}'}}</option>
-			    </select>
-		        
-			    <ng-switch on="!!fil.table">
-		        <select ui-select2="select2Options" data-placeholder="Select Column" ng-model="fil.column" ng-switch-when="true" ng-click="$event.stopPropagation()" style="width:150px">
-			    	<option></option>
-			    	<option ng-repeat="(key, value) in schema[fil.table]" value={{'{{key}}'}}>{{'{{key}}'}}</option>
-			    </select>						
-		        </ng-switch>
-		        <ng-switch on="!!fil.table && !!fil.column">
-		        <span ng-switch-when="true">
-		        
-					<select ui-select2="select2Options" ng-model="fil.operator" ng-click="$event.stopPropagation()">
-						<option ng-repeat="operator in operators" value="{{'{{operator.id}}'}}">{{'{{operator.text}}'}}</option>
-					</select>
-					
-					<!--
-					<ng-switch on=schema[fil.table][fil.column]>
-						<input type="number" ng-model="fil.value1" class="value1 span2" ng-switch-when="INTEGER"></input>
-						<span ng-switch-default>
-							<input type="text" ng-model="fil.value1" class="value1 span2"></input>
-						</span>
-					</ng-switch>
-					-->
-					<input type="text" ng-model="fil.value1" class="value1 span2" ng-click="$event.stopPropagation()"></input>
-									
-				</ng-switch>
-				<ng-switch on="fil.operator=='between'">
-					<span ng-switch-when="true">
-						
-						<!--
-						<ng-switch on=schema[fil.table][fil.column]>
-							<input type="number" ng-model="fil.value2" class="value2 span2" ng-switch-when="INTEGER"></input>
-							<span ng-switch-default>
-								<input type="text" ng-model="fil.value2" class="value2 span2"></input>
+		  	<li class="alert alert-info" ng-repeat="filt in filters" ng-click="changeSelection(filt)" ng-class="{selected : filt.selected}">
+		  		<a ng-click="removeFilter(filt)"><i class="icon-remove"></i></a>
+		  			  		
+		  		<ng-switch on="filt.type">
+		  		<div ng-switch-when="MANY">
+		  			<span ng-repeat="fil in filt.filters">
+		  			<span>
+		  				<select ui-select2="select2Options" data-placeholder="Select Table" ng-model="fil.table" ng-click="$event.stopPropagation()" style="width:150px">
+					    	<option></option>
+					    	<option ng-repeat="option in typeOptions" value={{'{{option}}'}}>{{'{{option}}'}}</option>
+					    </select>
+				        
+					    <ng-switch on="!!fil.table">
+				        <select ui-select2="select2Options" data-placeholder="Select Column" ng-model="fil.column" ng-switch-when="true" ng-click="$event.stopPropagation()" style="width:150px">
+					    	<option></option>
+					    	<option ng-repeat="(key, value) in schema[fil.table]" value={{'{{key}}'}}>{{'{{key}}'}}</option>
+					    </select>						
+				        </ng-switch>
+				        <ng-switch on="!!fil.table && !!fil.column">
+				        <span ng-switch-when="true">
+				        
+							<select ui-select2="select2Options" ng-model="fil.operator" ng-click="$event.stopPropagation()">
+								<option ng-repeat="operator in operators" value="{{'{{operator.id}}'}}">{{'{{operator.text}}'}}</option>
+							</select>
+							
+							<input type="text" ng-model="fil.value1" class="value1 span2" ng-click="$event.stopPropagation()"></input>
+											
+						</ng-switch>
+						<ng-switch on="fil.operator=='between'">
+							<span ng-switch-when="true">
+								<input type="text" ng-model="fil.value2" class="value2 span2" ng-click="$event.stopPropagation()"></input>
 							</span>
 						</ng-switch>
-						-->
-						<input type="text" ng-model="fil.value2" class="value2 span2" ng-click="$event.stopPropagation()"></input>
 					</span>
-				</ng-switch>				
+					<br></br>
+		  			</span>
+				</div>
+				
+		  		<span ng-switch-when="ONE">
+	  				<select ui-select2="select2Options" data-placeholder="Select Table" ng-model="filt.table" ng-click="$event.stopPropagation()" style="width:150px">
+				    	<option></option>
+				    	<option ng-repeat="option in typeOptions" value={{'{{option}}'}}>{{'{{option}}'}}</option>
+				    </select>
+			        
+				    <ng-switch on="!!filt.table">
+				        <select ui-select2="select2Options" data-placeholder="Select Column" ng-model="filt.column" ng-switch-when="true" ng-click="$event.stopPropagation()" style="width:150px">
+					    	<option></option>
+					    	<option ng-repeat="(key, value) in schema[filt.table]" value={{'{{key}}'}}>{{'{{key}}'}}</option>
+					    </select>						
+			        </ng-switch>
+			        <ng-switch on="!!filt.table && !!filt.column">
+				        <span ng-switch-when="true">
+				        
+							<select ui-select2="select2Options" ng-model="filt.operator" ng-click="$event.stopPropagation()">
+								<option ng-repeat="operator in operators" value="{{'{{operator.id}}'}}">{{'{{operator.text}}'}}</option>
+							</select>
+							<input type="text" ng-model="filt.value1" class="value1 span2" ng-click="$event.stopPropagation()"></input>
+											
+						</ng-switch>
+						<ng-switch on="filt.operator=='between'">
+							<span ng-switch-when="true">
+								<input type="text" ng-model="filt.value2" class="value2 span2" ng-click="$event.stopPropagation()"></input>
+							</span>
+						</ng-switch>				
+					</ng-switch>
 				</span>
+			  		
+		  		</ng-switch>
+		  		
 				<span class="pull-right handle"><i class="icon-align-justify"></i></span>
+		        
 			</li>
 			</ul>
 			<button class="btn btn-small btn-inverse" type="button" ng-click="addFilter()">Add Filter</button>
