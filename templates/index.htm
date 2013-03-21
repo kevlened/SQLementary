@@ -176,7 +176,9 @@
 		  		<a ng-click="removeFilter(filt)"><i class="icon-remove"></i></a>
 		  			  		
 		  		<ng-switch on="filt.type">
-		  		<div ng-switch-when="MANY">
+		  		<span ng-switch-when="MANY">
+		  			<span class="pull-right handle"><i class="icon-align-justify"></i></span>
+		  			<br/>
 		  			<span ng-repeat="fil in filt.filters">
 		  			<span>
 		  				<select ui-select2="select2Options" data-placeholder="Select Table" ng-model="fil.table" ng-click="$event.stopPropagation()" style="width:150px">
@@ -206,9 +208,9 @@
 							</span>
 						</ng-switch>
 					</span>
-					<br></br>
+					<br/>
 		  			</span>
-				</div>
+				</span>
 				
 		  		<span ng-switch-when="ONE">
 	  				<select ui-select2="select2Options" data-placeholder="Select Table" ng-model="filt.table" ng-click="$event.stopPropagation()" style="width:150px">
@@ -237,11 +239,12 @@
 							</span>
 						</ng-switch>				
 					</ng-switch>
+					<span ng-show="filt.type == 'ONE'" class="pull-right handle"><i class="icon-align-justify"></i></span>
 				</span>
 			  		
 		  		</ng-switch>
 		  		
-				<span class="pull-right handle"><i class="icon-align-justify"></i></span>
+				
 		        
 			</li>
 			</ul>
