@@ -1,12 +1,15 @@
 import os
 import json
 
-import sqlalchemy
+#import sqlalchemy
+from flask.ext.sqlalchemy import SQLAlchemy
 from jinja2 import Template
-from flask import Flask, request, redirect, session, render_template, url_for
+from flask import Flask, request, redirect, render_template, url_for
+from flask.ext import admin, login, wtf
+from flask.ext.admin.contrib import sqlamodel
 
 from config import Dev_Config
-from models import db, Database
+from models import db, Database, User
 from SQLementary import build_elm_schema, run, get_connection
 from elm_objects import elm_constraint
 
@@ -17,7 +20,7 @@ db.init_app(app)
 
 @app.route("/")
 def index():
-    return render_template('index.htm')
+    return render_template('index.htm', user=login.current_user)
 
 @app.route("/databases")
 def get_databases():
@@ -28,7 +31,6 @@ def get_databases():
     for database in databases:
         a = database.alias if database.alias else database.full_name
         db_list[database.id] = a
-#    databases_dict = {}
     response = json.dumps(db_list)
     return response
 
@@ -127,13 +129,100 @@ def get_query_data(query_id):
     else:
         return "You must have a query id"
 
+###############################################################################
+#######################Authorization Test######################################
+###############################################################################
+# Define login and registration forms (for flask-login)
+class LoginForm(wtf.Form):
+    login = wtf.TextField(validators=[wtf.required()])
+    password = wtf.PasswordField(validators=[wtf.required()])
+
+    def validate_login(self, field):
+        user = self.get_user()
+
+        if user is None:
+            raise wtf.ValidationError('Invalid user')
+
+        if user.password != self.password.data:
+            raise wtf.ValidationError('Invalid password')
+
+    def get_user(self):
+        return db.session.query(User).filter_by(login=self.login.data).first()
+
+
+class RegistrationForm(wtf.Form):
+    login = wtf.TextField(validators=[wtf.required()])
+    email = wtf.TextField()
+    password = wtf.PasswordField(validators=[wtf.required()])
+
+    def validate_login(self, field):
+        if db.session.query(User).filter_by(login=self.login.data).count() > 0:
+            raise wtf.ValidationError('Duplicate username')
+
+# Initialize flask-login
+def init_login():
+    login_manager = login.LoginManager()
+    login_manager.setup_app(app)
+
+    # Create user loader function
+    @login_manager.user_loader
+    def load_user(user_id):
+        return db.session.query(User).get(user_id)
+
+# Create customized model view class
+class MyModelView(sqlamodel.ModelView):
+    def is_accessible(self):
+        return login.current_user.is_authenticated()
+
+
+# Create customized index view class
+class MyAdminIndexView(admin.AdminIndexView):
+    def is_accessible(self):
+        return login.current_user.is_authenticated()
+
+@app.route('/login/', methods=('GET', 'POST'))
+def login_view():
+    form = LoginForm(request.form)
+    if form.validate_on_submit():
+        user = form.get_user()
+        login.login_user(user)
+        return redirect(url_for('admin.index'))
+
+    return render_template('form.html', form=form)
+
+@app.route('/logout/')
+def logout_view():
+    login.logout_user()
+    return redirect(url_for('index'))
+###############################################################################
+#########################End Authorization Test################################
+###############################################################################
+
 if __name__ == "__main__":
     # Create test context to set up db
     ctx = app.test_request_context()
     ctx.push()
+    
+    # Initialize flask-login
+    init_login()
+
+    # Create flask-admin
+    admin = admin.Admin(app, 'SQLementary', index_view=MyAdminIndexView())
+
+    # Add view
+    admin.add_view(MyModelView(User, db.session))
+    admin.add_view(MyModelView(Database, db.session))
+    
+    # End Authorization
 
     # Create db tables
     db.create_all()
+    
+    # Create default admin if it doesn't exist
+    if not User.query.filter_by(login='admin').first():        
+        u = User('admin',password="default",admin=True)
+        db.session.add(u)
+        db.session.commit()
 
     # Create samples databases if they don't exist
     if not Database.query.filter_by(db_type='sqlite').first():

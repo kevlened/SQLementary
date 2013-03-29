@@ -30,3 +30,36 @@ class Database(db.Model):
         a = self.alias if self.alias else self.full_name
         
         return '<Database %s: %s>' % (a, self.id)
+
+# Create user model. For simplicity, it will store passwords in plain text.
+# Obviously that's not right thing to do in real world application.
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    login = db.Column(db.String(80), unique=True)
+    email = db.Column(db.String(120))
+    password = db.Column(db.String(64))
+    # Will be used to determine who has privileges to change db and users 
+    admin = db.Column(db.Boolean, default=False, unique=False, nullable=False)
+    
+    def __init__(self, login, email=None, password=None, admin=False):
+        self.login = login
+        self.email = email
+        self.password = password
+        self.admin = admin
+
+    # Flask-Login integration
+    def is_authenticated(self):
+        return True
+
+    def is_active(self):
+        return True
+
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        return self.id
+
+    # Required for administrative interface
+    def __unicode__(self):
+        return self.username
