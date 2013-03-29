@@ -3,6 +3,9 @@ from datetime import datetime
 #from flask.ext.login import UserMixin
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.engine.url import URL
+from sqlalchemy.ext.declarative import declarative_base, declared_attr
+from sqlalchemy.orm import synonym
+from werkzeug.security import generate_password_hash
 
 db = SQLAlchemy()
 
@@ -37,11 +40,23 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     login = db.Column(db.String(80), unique=True)
     email = db.Column(db.String(120))
-    password = db.Column(db.String(64))
+    # password = db.Column(db.String(64))
+    _password = db.Column('password', db.String(64))
+
+    def get_attr(self):
+        return self._password
+
+    def set_attr(self, value):
+         self._password = generate_password_hash(value) if value is not None else generate_password_hash('')
+
+    @declared_attr
+    def password(cls):
+        return synonym('_password', descriptor=property(cls.get_attr, cls.set_attr))
+    
     # Will be used to determine who has privileges to change db and users 
     admin = db.Column(db.Boolean, default=False, unique=False, nullable=False)
     
-    def __init__(self, login, email=None, password=None, admin=False):
+    def __init__(self, login=None, email=None, password=None, admin=False):
         self.login = login
         self.email = email
         self.password = password

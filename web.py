@@ -1,12 +1,12 @@
 import os
 import json
 
-#import sqlalchemy
 from flask.ext.sqlalchemy import SQLAlchemy
 from jinja2 import Template
 from flask import Flask, request, redirect, render_template, url_for
 from flask.ext import admin, login, wtf
 from flask.ext.admin.contrib import sqlamodel
+from werkzeug.security import generate_password_hash, check_password_hash
 
 from config import Dev_Config
 from models import db, Database, User
@@ -129,9 +129,6 @@ def get_query_data(query_id):
     else:
         return "You must have a query id"
 
-###############################################################################
-#######################Authorization Test######################################
-###############################################################################
 # Define login and registration forms (for flask-login)
 class LoginForm(wtf.Form):
     login = wtf.TextField(validators=[wtf.required()])
@@ -143,21 +140,21 @@ class LoginForm(wtf.Form):
         if user is None:
             raise wtf.ValidationError('Invalid user')
 
-        if user.password != self.password.data:
+        if not check_password_hash(user.password, self.password.data):
             raise wtf.ValidationError('Invalid password')
 
     def get_user(self):
         return db.session.query(User).filter_by(login=self.login.data).first()
 
 
-class RegistrationForm(wtf.Form):
-    login = wtf.TextField(validators=[wtf.required()])
-    email = wtf.TextField()
-    password = wtf.PasswordField(validators=[wtf.required()])
-
-    def validate_login(self, field):
-        if db.session.query(User).filter_by(login=self.login.data).count() > 0:
-            raise wtf.ValidationError('Duplicate username')
+#class RegistrationForm(wtf.Form):
+#    login = wtf.TextField(validators=[wtf.required()])
+#    email = wtf.TextField()
+#    password = wtf.PasswordField(validators=[wtf.required()])
+#
+#    def validate_login(self, field):
+#        if db.session.query(User).filter_by(login=self.login.data).count() > 0:
+#            raise wtf.ValidationError('Duplicate username')
 
 # Initialize flask-login
 def init_login():
@@ -220,7 +217,7 @@ if __name__ == "__main__":
     
     # Create default admin if it doesn't exist
     if not User.query.filter_by(login='admin').first():        
-        u = User('admin',password="default",admin=True)
+        u = User(login='admin',password="default",admin=True)
         db.session.add(u)
         db.session.commit()
 
