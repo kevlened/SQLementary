@@ -37,7 +37,7 @@ myApp.controller('QueryCtrl',function ($scope, $http) {
     $scope.distinct = true;
     
     $scope.aggOptions = ['COUNT', 'SUM', 'MIN', 'MAX', 'AVG', 'Clear'];
-    $scope.filOptions = ['AND'];
+    $scope.filOptions = ['AND', 'OR'];
     
     $scope.operators = [
     	{id: '=', text: '='}, 

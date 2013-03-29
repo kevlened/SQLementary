@@ -10,26 +10,33 @@
 # License:     LGPL (http://www.gnu.org/licenses/lgpl-3.0.txt)
 #-------------------------------------------------------------------------------
 
-class elm_constraint(object):
-    '''Represents a constraint on a particular column'''
-    def __init__(self, table_name, column_name, operator, val1, val2, aggregate):
-                
+'''Represents a constraint or collection of constraints on a column'''
+class elm_constraint(object):    
+    def __init__(self, table_name, column_name, operator, val1, val2, aggregate, bool_type, constraints):
+        
+        # The table this constraint acts on        
         self.table_name = table_name
-        '''table_name (string) = table name of associated column'''
         
+        # Column name of associated table
         self.column_name = column_name
-        '''column_name (string) = column name of associated column'''
         
+        # The boolean or comparative operator defining how to use val1 and val2
         self.operator = operator
-        '''operator (string) = boolean or comparative operators defining how to use val1 and val2'''
         
+        # For any non-BETWEEN operator, the value is in val1
         self.val1 = val1
-        '''val1 (string) = first and primary value'''
         
+        # If this constraint has a BETWEEN operator, the second value is val2
         self.val2 = val2
-        '''val2 (string) = used for BETWEEN operator only'''
         
+        # This tracks what type of aggregate this constraint uses (SUM,AVG,etc)
         self.aggregate = aggregate
+        
+        # This tracks what kind of comparison the associated constraints use
+        self.bool_type = bool_type
+        
+        # If this track has a bool_type, the associated constraints are here
+        self.constraints = constraints
     
     def __repr__(self):
         if self.val2:

@@ -18,7 +18,7 @@ from optparse import OptionParser
 
 import sqlparse
 import sqlsoup
-from sqlalchemy import func
+from sqlalchemy import func, or_, and_
 from sqlalchemy.exc import AmbiguousForeignKeysError
 from sqlalchemy.engine.url import URL
 from sqlalchemy.sql import column, table, select, join, compiler, between
@@ -68,7 +68,7 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     
     db = get_connection(db_type, loc, host = host, port = port, username = username, password = password)
     elm_tables = build_elm_schema(db)
-    elm_constraints = []
+    elm_constraints = constraints
     
     logging.info('Pulling table and column Metadata from database')
     if not len(db._metadata.tables):
@@ -79,21 +79,6 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     for sqa_table in sqa_tables:
         elm_tables.append(elm_table(sqa_table))
     
-    logging.info('Building a list of constraint objects from constraint list argument')
-    if constraints:
-        for c in constraints:
-            table = c[0]
-            column = c[1]
-            aggregate = c[2]
-            operator = c[3]
-            value1 = c[4]            
-            
-            #Sanitize val2
-            value2 = c[5] if len(c) == 6 else None
-            value2 = None if value2 == '' else value2
-            
-            elm_constraints.append(elm_constraint(table, column, operator, value1, value2, aggregate))
-    
     logging.info('Building a list of necessary tables')
     ret_cols = []
     for tab_col in returned_columns:
@@ -101,15 +86,28 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
         column = tab_col[1]
         ret_cols.append([table, column])
         
-    tabs_temp = set([table_column[0] for table_column in ret_cols])    
-    con_tabs_temp = set([con.table_name for con in elm_constraints])    
+    tabs_temp = set([table_column[0] for table_column in ret_cols])
+    
+    # Generate a set of tables necessary for all the constraints  
+    con_tabs_temp = set()
+    for con in elm_constraints:
+        if con.bool_type == "" or con.bool_type is None:
+            con_tabs_temp.add(con.table_name)
+        else:
+            for c in con.constraints:
+                con_tabs_temp.add(c.table_name)
+                
     tabs_temp = tabs_temp.union(con_tabs_temp)
     
-    #Add the tables from the constraints to the validation
+    # Add the tables from the constraints to the validation
     col_tab_all = ret_cols[:]
     if len(elm_constraints) > 0:
         for con in elm_constraints:
-            col_tab_all.append([con.table_name, con.column_name])
+            if con.bool_type == "" or con.bool_type is None:
+                col_tab_all.append([con.table_name, con.column_name])
+            else:
+                for c in con.constraints:
+                    col_tab_all.append([c.table_name, c.column_name])
     
     #Validate the tables actually exist
     all_tables = set([t.name for t in sqa_tables])
@@ -220,20 +218,44 @@ def run(db_type, loc, returned_columns, host = None, port = None, username = Non
     
     #Add the constraints
     for ec in elm_constraints:
-        if ec.operator == "=":
-            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) == ec.val1)
-        elif ec.operator == ">":
-            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) > ec.val1)
-        elif ec.operator == ">=":
-            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) >= ec.val1)   
-        elif ec.operator == "<":
-            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) < ec.val1)   
-        elif ec.operator == "<=":
-            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) <= ec.val1)   
-        elif ec.operator == "!=" or ec.operator == "<>":
-            query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) != ec.val1)
-        elif ec.operator == "between" or ec.operator == "btw":
-            query = query.filter(between(get_column(table_dict[ec.table_name],ec.column_name), ec.val1, ec.val2))
+        if ec.bool_type == "":
+            if ec.operator == "=":
+                query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) == ec.val1)
+            elif ec.operator == ">":
+                query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) > ec.val1)
+            elif ec.operator == ">=":
+                query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) >= ec.val1)   
+            elif ec.operator == "<":
+                query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) < ec.val1)   
+            elif ec.operator == "<=":
+                query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) <= ec.val1)   
+            elif ec.operator == "!=" or ec.operator == "<>":
+                query = query.filter(get_column(table_dict[ec.table_name],ec.column_name) != ec.val1)
+            elif ec.operator == "between" or ec.operator == "btw":
+                query = query.filter(between(get_column(table_dict[ec.table_name],ec.column_name), ec.val1, ec.val2))
+        else:
+            critereon = []
+            for ecn in ec.constraints:
+                if ecn.operator == "=":
+                    critereon.append(get_column(table_dict[ecn.table_name],ecn.column_name) == ecn.val1)
+                elif ecn.operator == ">":
+                    critereon.append(get_column(table_dict[ecn.table_name],ecn.column_name) > ecn.val1)
+                elif ecn.operator == ">=":
+                    critereon.append(get_column(table_dict[ecn.table_name],ecn.column_name) >= ecn.val1)   
+                elif ecn.operator == "<":
+                    critereon.append(get_column(table_dict[ecn.table_name],ecn.column_name) < ecn.val1)   
+                elif ecn.operator == "<=":
+                    critereon.append(get_column(table_dict[ecn.table_name],ecn.column_name) <= ecn.val1)   
+                elif ecn.operator == "!=" or ecn.operator == "<>":
+                    critereon.append(get_column(table_dict[ecn.table_name],ecn.column_name) != ecn.val1)
+                elif ecn.operator == "between" or ecn.operator == "btw":
+                    critereon.append(between(get_column(table_dict[ecn.table_name],ecn.column_name), ecn.val1, ecn.val2))
+            
+            if ec.bool_type == "OR":
+                query = query.filter(or_(*critereon))
+            elif ec.bool_type == "AND":
+                query = query.filter(and_(*critereon))
+            
         
     #Make rows distinct
     if distinct:

@@ -174,9 +174,10 @@
 	  		<ul class="unstyled" ng-model="filters" ui-sortable="{update: update, remove: remove, axis: 'y', handle: '.handle'}">
 		  	<li class="alert alert-info" ng-repeat="filt in filters" ng-click="changeSelection(filt)" ng-class="{selected : filt.selected}">
 		  		<a ng-click="removeFilter(filt)"><i class="icon-remove"></i></a>
-		  			  		
+		  				
 		  		<ng-switch on="filt.type">
 		  		<span ng-switch-when="MANY">
+		  			<span>{{'{{filt.boolType}}'}}</span>
 		  			<span class="pull-right handle"><i class="icon-align-justify"></i></span>
 		  			<br/>
 		  			<span ng-repeat="fil in filt.filters">

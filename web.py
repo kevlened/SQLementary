@@ -8,6 +8,7 @@ from flask import Flask, request, redirect, session, render_template, url_for
 from config import Dev_Config
 from models import db, Database
 from SQLementary import build_elm_schema, run, get_connection
+from elm_objects import elm_constraint
 
 app = Flask(__name__)
 app.config.from_object(Dev_Config)
@@ -64,7 +65,36 @@ def get_query_data(query_id):
     if query_id:
         data = request.json
         desiredcols = [[col['table'],col['column'],col['aggregate']] for col in data['desiredcolumns']]
-        filters = [(fil['table'],fil['column'], fil['aggregate'], fil['operator'], fil['value1'], fil['value2']) for fil in data['filters']]           
+        #filters = [(fil['table'],fil['column'], fil['aggregate'], fil['operator'], fil['value1'], fil['value2']) for fil in data['filters']]  
+        
+        filters = []
+        
+        # Build filters, could be hierarchical
+        for fil in data['filters']:
+            t = fil['table']
+            c = fil['column']
+            agg = fil['aggregate']
+            op = fil['operator']
+            v1 = fil['value1']
+            v2 = fil['value2']
+            bt = fil['boolType']
+            fs = fil['filters']
+            if bt == "":              
+                filters.append(elm_constraint(t,c,op,v1,v2,agg,bt,fs))
+            else:
+                fils = []
+                for f in fs:
+                    _t = f['table']
+                    _c = f['column']
+                    _agg = f['aggregate']
+                    _op = f['operator']
+                    _v1 = f['value1']
+                    _v2 = f['value2']
+                    _bt = fil['boolType']
+                    _fs = f['filters']
+                    fils.append(elm_constraint(_t,_c,_op,_v1,_v2,_agg,_bt,_fs))
+                filters.append(elm_constraint(t,c,op,v1,v2,agg,bt,fils))
+                 
         row_count = data['rowlimit']
         dist = data['distinct'] == True
         
