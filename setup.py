@@ -24,8 +24,8 @@ base = None
 #if sys.platform == "win32":
 #    base = "Win32GUI"
 
-setup(  name = "guifoo",
+setup(  name = "SQLementary",
         version = "0.1",
-        description = "My GUI application!",
+        description = "An easy SQL generator",
         options = {"build_exe": build_exe_options},
-        executables = [Executable("web.py", base=base)])
+        executables = [Executable("web.py", base=base, targetName="SQLementary.exe", shortcutName="SQLementary", shortcutDir='ProgramMenuFolder')])

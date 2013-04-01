@@ -121,7 +121,7 @@ def get_query_data(query_id):
             tuple_string = []
             for item in tpl:
                 '''Convert all the strings to utf-8''' 
-                tuple_string.append(str(item).encode('utf-8'))
+                tuple_string.append(item.encode('utf-8'))
             data[t] = tuple(tuple_string)
                                   
         response = json.dumps({'sql': sql, 'data': data})
@@ -262,7 +262,7 @@ if __name__ == "__main__":
     ctx.pop()    
     
     # Start server    
-    #app.debug = False    
+    app.debug = True    
     app.run()
     #port = int(os.environ.get("PORT", 80))
     #app.run('0.0.0.0', port)
