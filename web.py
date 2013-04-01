@@ -8,7 +8,7 @@ from flask.ext import admin, login, wtf
 from flask.ext.admin.contrib import sqlamodel
 from werkzeug.security import generate_password_hash, check_password_hash
 
-from config import Dev_Config
+from config import Dev_Config, Prod_Config
 from models import db, Database, User
 from SQLementary import build_elm_schema, run, get_connection
 from elm_objects import elm_constraint
@@ -146,16 +146,6 @@ class LoginForm(wtf.Form):
     def get_user(self):
         return db.session.query(User).filter_by(login=self.login.data).first()
 
-
-#class RegistrationForm(wtf.Form):
-#    login = wtf.TextField(validators=[wtf.required()])
-#    email = wtf.TextField()
-#    password = wtf.PasswordField(validators=[wtf.required()])
-#
-#    def validate_login(self, field):
-#        if db.session.query(User).filter_by(login=self.login.data).count() > 0:
-#            raise wtf.ValidationError('Duplicate username')
-
 # Initialize flask-login
 def init_login():
     login_manager = login.LoginManager()
@@ -191,9 +181,6 @@ def login_view():
 def logout_view():
     login.logout_user()
     return redirect(url_for('index'))
-###############################################################################
-#########################End Authorization Test################################
-###############################################################################
 
 if __name__ == "__main__":
     # Create test context to set up db
@@ -209,8 +196,6 @@ if __name__ == "__main__":
     # Add view
     admin.add_view(MyModelView(User, db.session))
     admin.add_view(MyModelView(Database, db.session))
-    
-    # End Authorization
 
     # Create db tables
     db.create_all()
@@ -277,7 +262,7 @@ if __name__ == "__main__":
     ctx.pop()    
     
     # Start server    
-    app.debug = False    
+    #app.debug = False    
     app.run()
     #port = int(os.environ.get("PORT", 80))
     #app.run('0.0.0.0', port)
